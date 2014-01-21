@@ -12,10 +12,22 @@ author:              Cindy Wang (CindyLinz)
 maintainer:          cindylinz@gmail.com
 -- copyright:           
 category:            Language
-build-type:          Simple
+build-type:          Custom
 cabal-version:       >=1.8
 
 library
-  -- exposed-modules:     
+  exposed-modules:     Perl
+  hs-source-dirs:      src
+  c-sources:           c-src/perl-glue.c
   -- other-modules:       
   build-depends:       base ==4.6.*
+  extra-libraries:     perl
+
+executable test-bare
+  -- type:                exitcode-stdio-1.0
+  main-is:             TestBare.hs
+  hs-source-dirs:      test
+                     , src
+  c-sources:           c-src/perl-glue.c
+  build-depends:       base ==4.6.*
+  extra-libraries:     perl
