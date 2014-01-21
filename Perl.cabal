@@ -31,3 +31,11 @@ executable test-bare
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
   extra-libraries:     perl
+
+executable test-eval
+  main-is:             TestEval.hs
+  hs-source-dirs:      test
+                     , src
+  c-sources:           c-src/perl-glue.c
+  build-depends:       base ==4.6.*
+  extra-libraries:     perl

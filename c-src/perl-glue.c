@@ -1,4 +1,4 @@
-#define PERL_NO_SHORT_NAMES
+//#define PERL_NO_SHORT_NAMES
 #include <EXTERN.h>
 #include <perl.h>
 
@@ -18,4 +18,16 @@ void exit_perl(){
     perl_destruct(my_perl);
     perl_free(my_perl);
     PERL_SYS_TERM();
+}
+
+SV* glue_newSV(const STRLEN len){
+    return newSV(len);
+}
+
+void glue_sv_setpvn(SV *sv, const char *str, const STRLEN len){
+    sv_setpvn(sv, str, len);
+}
+
+SV *glue_eval_pv(const char *p, I32 croak_on_error){
+    return eval_pv(p, croak_on_error);
 }

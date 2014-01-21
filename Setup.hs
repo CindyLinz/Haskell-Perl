@@ -18,7 +18,10 @@ main = defaultMainWithHooks simpleUserHooks
     return originLocalBuildInfo
       { localPkgDescr = updatePackageDescription
         ( Just myBuildInfo
-        , [("test-bare", myBuildInfo)])
+        , [ ("test-bare", myBuildInfo)
+          , ("test-eval", myBuildInfo)
+          ]
+        )
         (localPkgDescr originLocalBuildInfo)
       }
   }
