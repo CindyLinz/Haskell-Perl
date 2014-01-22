@@ -38,4 +38,4 @@ foreign import ccall unsafe
   glue_eval_pv :: CString -> CInt -> IO (Ptr SV)
 
 eval :: CString -> IO Scalar
-eval code = fmap Scalar (glue_eval_pv code 0)
+eval code = fmap Scalar (glue_eval_pv code 1)

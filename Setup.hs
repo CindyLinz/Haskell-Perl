@@ -5,25 +5,23 @@ import Distribution.Simple.Program.Run
 import Distribution.PackageDescription
 
 main = defaultMainWithHooks simpleUserHooks
-  { confHook = \pkg flag -> do
+  { preBuild = \_ _ -> do
+    runProgramInvocation normal (simpleProgramInvocation "perl" ["-MExtUtils::Embed", "-e", "xsinit", "--", "-o", "c-src/perlxsi.c", "-std"])
+
     perlOptc <- getProgramOutputList "perl" ["-MExtUtils::Embed", "-e", "ccopts"]
     perlOptl <- getProgramOutputList "perl" ["-MExtUtils::Embed", "-e", "ldopts"]
-
-    originLocalBuildInfo <- confHook simpleUserHooks pkg flag
     let
       myBuildInfo = emptyBuildInfo
         { ccOptions = perlOptc
         , ldOptions = perlOptl
+        , cSources = ["c-src/perlxsi.c"]
         }
-    return originLocalBuildInfo
-      { localPkgDescr = updatePackageDescription
-        ( Just myBuildInfo
-        , [ ("test-bare", myBuildInfo)
-          , ("test-eval", myBuildInfo)
-          ]
-        )
-        (localPkgDescr originLocalBuildInfo)
-      }
+    return
+      ( Just myBuildInfo
+      , [ ("test-bare", myBuildInfo)
+        , ("test-eval", myBuildInfo)
+        ]
+      )
   }
   where
     getProgramOutputList path args =

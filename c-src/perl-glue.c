@@ -2,6 +2,7 @@
 #include <EXTERN.h>
 #include <perl.h>
 
+EXTERN_C void xs_init (pTHX);
 static PerlInterpreter *my_perl;
 
 void init_perl(){
@@ -11,7 +12,7 @@ void init_perl(){
     PERL_SYS_INIT3(&my_argc, (char ***)&my_argv, (char ***)&my_env);
     my_perl = perl_alloc();
     perl_construct(my_perl);
-    perl_parse(my_perl, NULL, 3, my_argv, NULL);
+    perl_parse(my_perl, xs_init, 3, my_argv, NULL);
 }
 
 void exit_perl(){
