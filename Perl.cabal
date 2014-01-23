@@ -28,6 +28,7 @@ executable test-bare
   main-is:             TestBare.hs
   hs-source-dirs:      test
                      , src
+  cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
   extra-libraries:     perl
@@ -36,6 +37,7 @@ executable test-eval
   main-is:             TestEval.hs
   hs-source-dirs:      test
                      , src
+  cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
   extra-libraries:     perl
