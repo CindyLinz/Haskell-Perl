@@ -5,6 +5,7 @@ module Perl.Monad
 import Foreign
 import Control.Monad
 import Data.Functor.Identity
+import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
 import Perl.Glue
@@ -53,3 +54,7 @@ instance Monad m => Monad (PerlT s m) where
     (scopeFrames', a) <- unPerlT f perl scopeFrames
     unPerlT (k a) perl scopeFrames'
 
+instance MonadTrans (PerlT s) where
+  lift act = PerlT $ \_ frames -> do
+    a <- act
+    return (frames, a)
