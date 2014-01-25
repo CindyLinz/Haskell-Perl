@@ -52,21 +52,21 @@ void exit_perl(pTHX){
 
 SV* glue_newSV(pTHX_ const STRLEN len){
 #ifdef TRACK_PERL_GLUE
-    puts("glue_newSV()");
+    printf("glue_newSV(%p)\n", (void*)aTHX);
 #endif
     return newSV(len);
 }
 
 void glue_sv_setpvn(pTHX_ SV *sv, const char *str, const STRLEN len){
 #ifdef TRACK_PERL_GLUE
-    puts("glue_sv_setpvn()");
+    printf("glue_sv_setpvn(%p)\n", (void*)aTHX);
 #endif
     sv_setpvn(sv, str, len);
 }
 
 SV *glue_eval_pv(pTHX_ const char *p, I32 croak_on_error){
 #ifdef TRACK_PERL_GLUE
-    puts("glue_eval_pv()");
+    printf("glue_eval_pv(%p)\n", (void*)aTHX);
 #endif
     return eval_pv(p, croak_on_error);
 }
