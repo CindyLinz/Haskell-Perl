@@ -25,19 +25,19 @@ data SV
 newtype Scalar = Scalar (Ptr SV)
 
 foreign import ccall unsafe "glue_newSV"
-  glue_newSV :: Strlen -> IO (Ptr SV)
+  glue_newSV :: Ptr PerlInterpreter -> Strlen -> IO (Ptr SV)
 
-newEmptyScalar :: IO Scalar
-newEmptyScalar = fmap Scalar (glue_newSV 0)
+newEmptyScalar :: Ptr PerlInterpreter -> IO Scalar
+newEmptyScalar my_perl = fmap Scalar (glue_newSV my_perl 0)
 
 foreign import ccall unsafe "glue_sv_setpvn"
-  glue_sv_setpvn :: Ptr SV -> Ptr CChar -> Strlen -> IO ()
+  glue_sv_setpvn :: Ptr PerlInterpreter -> Ptr SV -> Ptr CChar -> Strlen -> IO ()
 
-setScalarString :: Scalar -> CStringLen -> IO ()
-setScalarString (Scalar sv) (p_str, len) = glue_sv_setpvn sv p_str len
+setScalarString :: Ptr PerlInterpreter -> Scalar -> CStringLen -> IO ()
+setScalarString my_perl (Scalar sv) (p_str, len) = glue_sv_setpvn my_perl sv p_str len
 
 foreign import ccall unsafe
-  glue_eval_pv :: CString -> CInt -> IO (Ptr SV)
+  glue_eval_pv :: Ptr PerlInterpreter -> CString -> CInt -> IO (Ptr SV)
 
-eval :: CString -> IO Scalar
-eval code = fmap Scalar (glue_eval_pv code 1)
+eval :: Ptr PerlInterpreter -> CString -> IO Scalar
+eval my_perl code = fmap Scalar (glue_eval_pv my_perl code 1)
