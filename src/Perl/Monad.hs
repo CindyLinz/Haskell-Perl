@@ -42,6 +42,11 @@ keepAV av = keepSV (castPtr av)
 keepHV :: MonadIO m => PtrHV -> PerlT s m ()
 keepHV hv = keepSV (castPtr hv)
 
+liftScope :: Monad m => (forall s. PerlT s m a) -> PerlT s m a
+liftScope (PerlT act) = PerlT $ \perl (headFrame : otherFrames) -> do
+  (otherFrames', a) <- act perl otherFrames
+  return (headFrame : otherFrames', a)
+
 instance Monad m => Monad (PerlT s m) where
   return a = PerlT $ \perl scopeFrames -> return (scopeFrames, a)
   f >>= k = PerlT $ \perl scopeFrames -> do
