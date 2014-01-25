@@ -58,3 +58,6 @@ instance MonadTrans (PerlT s) where
   lift act = PerlT $ \_ frames -> do
     a <- act
     return (frames, a)
+
+instance MonadIO m => MonadIO (PerlT s m) where
+  liftIO = lift . liftIO
