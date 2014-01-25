@@ -9,12 +9,8 @@ import Control.Monad.IO.Class
 
 import Perl.Glue
 
-data ScopeFrame = ScopeFrame
-  { poolSV :: [PtrSV]
-  , poolAV :: [PtrAV]
-  , poolHV :: [PtrHV]
-  }
-emptyFrame = ScopeFrame [] [] []
+type ScopeFrame = [PtrSV]
+emptyFrame = []
 
 newtype PerlT s m a = PerlT
   { unPerlT :: PtrPerl -> [ScopeFrame] -> m ([ScopeFrame], a)
@@ -31,14 +27,20 @@ runPerlT act = do
 scope :: MonadIO m => (forall s. PerlT s m a) -> PerlT s m a
 scope (PerlT act) = PerlT $ \perl scopeFrames -> do
   let
-    releasePool :: [Ptr a] -> IO ()
-    releasePool ps = forM_ ps $ \p -> s_SvREFCNT_dec_NN perl (castPtr p)
-  (ScopeFrame poolSV poolAV poolHV : otherFrames, a) <- act perl (emptyFrame : scopeFrames)
-  liftIO $ do
-    releasePool poolSV
-    releasePool poolAV
-    releasePool poolHV
+    releasePool :: [PtrSV] -> IO ()
+    releasePool ps = forM_ ps $ \p -> s_SvREFCNT_dec_NN perl p
+  (poolSV : otherFrames, a) <- act perl (emptyFrame : scopeFrames)
+  liftIO $ releasePool poolSV
   return (otherFrames, a)
+
+keepSV :: MonadIO m => PtrSV -> PerlT s m ()
+keepSV sv = PerlT $ \perl (pool : otherFrames) -> do
+  liftIO $ s_SvREFCNT_inc_NN sv
+  return ((sv : pool) : otherFrames, ())
+keepAV :: MonadIO m => PtrAV -> PerlT s m ()
+keepAV av = keepSV (castPtr av)
+keepHV :: MonadIO m => PtrHV -> PerlT s m ()
+keepHV hv = keepSV (castPtr hv)
 
 instance Monad m => Monad (PerlT s m) where
   return a = PerlT $ \perl scopeFrames -> return (scopeFrames, a)
