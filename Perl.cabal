@@ -17,10 +17,13 @@ cabal-version:       >=1.8
 
 library
   exposed-modules:     Perl
+                     , Perl.Monad
+                     , Perl.Glue
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
   -- other-modules:       
   build-depends:       base ==4.6.*
+                     , transformers ==0.3.*
   extra-libraries:     perl
 
 executable test-bare
@@ -31,6 +34,7 @@ executable test-bare
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
+                     , transformers ==0.3.*
   extra-libraries:     perl
 
 executable test-eval
@@ -40,4 +44,5 @@ executable test-eval
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
+                     , transformers ==0.3.*
   extra-libraries:     perl

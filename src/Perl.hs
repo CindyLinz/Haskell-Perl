@@ -9,11 +9,13 @@ import Foreign.Ptr
 
 type Strlen = Int
 
+data PerlInterpreter
+
 foreign import ccall unsafe "init_perl"
-  perlInit :: IO ()
+  perlInit :: IO (Ptr PerlInterpreter)
 
 foreign import ccall unsafe "exit_perl"
-  perlExit :: IO ()
+  perlExit :: Ptr PerlInterpreter -> IO ()
 
 --foreign import ccall unsafe "perl
 

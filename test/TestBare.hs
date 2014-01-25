@@ -4,9 +4,9 @@ import Perl
 
 main = do
   putStrLn "Init..."
-  perlInit
+  perl <- perlInit
   putStrLn "  done."
 
   putStrLn "Exit..."
-  perlExit
+  perlExit perl
   putStrLn "  done."

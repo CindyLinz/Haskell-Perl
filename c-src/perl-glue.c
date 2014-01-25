@@ -1,4 +1,6 @@
 //#define PERL_NO_SHORT_NAMES
+#undef USE_ITHREADS
+
 #include <EXTERN.h>
 #include <perl.h>
 
@@ -9,22 +11,24 @@
 EXTERN_C void xs_init (pTHX);
 static PerlInterpreter *my_perl;
 
-void init_perl(){
+PerlInterpreter *init_perl(){
     int my_argc = 3;
     char *my_argv[] = { "", "-e", "0", NULL };
     char *my_env[] = { NULL };
-#ifdef TRACK_PERL_GLUE
-    puts("init_perl()");
-#endif
     PERL_SYS_INIT3(&my_argc, (char ***)&my_argv, (char ***)&my_env);
     my_perl = perl_alloc();
     perl_construct(my_perl);
     perl_parse(my_perl, xs_init, 3, my_argv, NULL);
+#ifdef TRACK_PERL_GLUE
+    printf("init_perl() %p", (void*)my_perl);
+    puts(PL_bincompat_options);
+#endif
+    return my_perl;
 }
 
-void exit_perl(){
+void exit_perl(PerlInterpreter *my_perl){
 #ifdef TRACK_PERL_GLUE
-    puts("exit_perl()");
+    printf("exit_perl(%p)\n", (void*)my_perl);
 #endif
     perl_destruct(my_perl);
     perl_free(my_perl);
