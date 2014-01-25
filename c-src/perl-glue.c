@@ -10,14 +10,28 @@
 
 EXTERN_C void xs_init (pTHX);
 
-tTHX init_perl(){
-    int my_argc = 3;
-    char *my_argv[] = { "", "-e", "0", NULL };
-    char *my_env[] = { NULL };
+static int my_argc = 3;
+static char *my_argv[] = { "", "-e", "0", NULL };
+static char *my_env[] = { NULL };
+
+static int running_perl = 0;
+
+static void very_init_perl(){
     PERL_SYS_INIT3(&my_argc, (char ***)&my_argv, (char ***)&my_env);
-    tTHX aTHX = perl_alloc();
+}
+
+static void very_exit_perl(){
+    PERL_SYS_TERM();
+}
+
+tTHX init_perl(){
+    tTHX aTHX;
+    if( ++running_perl == 1 )
+        very_init_perl();
+
+    aTHX = perl_alloc();
     perl_construct(aTHX);
-    perl_parse(aTHX_ xs_init, 3, my_argv, NULL);
+    perl_parse(aTHX_ xs_init, my_argc, my_argv, my_env);
 #ifdef TRACK_PERL_GLUE
     printf("init_perl() %p", (void*)aTHX);
     puts(PL_bincompat_options);
@@ -31,7 +45,9 @@ void exit_perl(pTHX){
 #endif
     perl_destruct(aTHX);
     perl_free(aTHX);
-    PERL_SYS_TERM();
+
+    if( --running_perl == 0 )
+        very_exit_perl();
 }
 
 SV* glue_newSV(pTHX_ const STRLEN len){
