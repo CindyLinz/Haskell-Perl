@@ -3,9 +3,12 @@ module Perl.Glue
   where
 
 import Foreign
+import Foreign.C.Types
 import Foreign.C.String
 
-type StrLen = Int
+type StrLen = CSize
+type IV = CIntMax
+type NV = CDouble
 
 data PerlInterpreter
 type PtrPerl = Ptr PerlInterpreter
@@ -37,7 +40,7 @@ foreign import ccall unsafe
 ------
 -- ref count
 
-foreign import ccall unsafe
+foreign import ccall safe
   "Perl_sv_free" perl_sv_free :: PtrPerl -> PtrSV -> IO ()
 
 foreign import ccall unsafe
@@ -48,6 +51,18 @@ foreign import ccall unsafe
 
 foreign import ccall unsafe
   svREFCNT_inc_void :: PtrSV -> IO ()
+
+------
+-- read SV
+
+foreign import ccall safe
+  svIVx :: PtrPerl -> PtrSV -> IO IV
+
+foreign import ccall safe
+  svNVx :: PtrPerl -> PtrSV -> IO NV
+
+foreign import ccall safe
+  svPVbytex :: PtrPerl -> PtrSV -> Ptr StrLen -> IO (Ptr CChar)
 
 ------
 -- eval

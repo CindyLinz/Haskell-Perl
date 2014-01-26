@@ -79,3 +79,15 @@ SV *svREFCNT_inc_NN(SV *sv){
 SV *svREFCNT_inc_void(SV *sv){
     SvREFCNT_inc_void(sv);
 }
+
+IV svIVx(pTHX_ SV *sv){
+    return SvIVx(sv);
+}
+
+NV svNVx(pTHX_ SV *sv){
+    return SvNVx(sv);
+}
+
+char *svPVbytex(pTHX_ SV *sv, STRLEN *len){
+    return SvPVbytex(sv, (*len));
+}
