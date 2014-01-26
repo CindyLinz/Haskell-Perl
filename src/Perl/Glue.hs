@@ -38,19 +38,16 @@ foreign import ccall unsafe
 -- ref count
 
 foreign import ccall unsafe
-  "S_SvREFCNT_dec" s_SvREFCNT_dec :: PtrPerl -> PtrSV -> IO ()
+  "Perl_sv_free" perl_sv_free :: PtrPerl -> PtrSV -> IO ()
 
 foreign import ccall unsafe
-  "S_SvREFCNT_dec_NN" s_SvREFCNT_dec_NN :: PtrPerl -> PtrSV -> IO ()
+  svREFCNT_inc :: PtrSV -> IO PtrSV
 
 foreign import ccall unsafe
-  "S_SvREFCNT_inc" s_SvREFCNT_inc :: PtrSV -> IO PtrSV
+  svREFCNT_inc_NN :: PtrSV -> IO PtrSV
 
 foreign import ccall unsafe
-  "S_SvREFCNT_inc_NN" s_SvREFCNT_inc_NN :: PtrSV -> IO PtrSV
-
-foreign import ccall unsafe
-  "S_SvREFCNT_inc_void" s_SvREFCNT_inc_void :: PtrSV -> IO ()
+  svREFCNT_inc_void :: PtrSV -> IO ()
 
 ------
 -- eval

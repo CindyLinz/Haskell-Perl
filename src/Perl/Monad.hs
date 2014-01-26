@@ -30,14 +30,14 @@ scope :: MonadIO m => (forall s. PerlT s m a) -> PerlT s m a
 scope (PerlT act) = PerlT $ \perl scopeFrames -> do
   let
     releasePool :: [PtrSV] -> IO ()
-    releasePool ps = forM_ ps $ \p -> s_SvREFCNT_dec_NN perl p
+    releasePool ps = forM_ ps $ \p -> perl_sv_free perl p
   (poolSV : otherFrames, a) <- act perl (emptyFrame : scopeFrames)
   liftIO $ releasePool poolSV
   return (otherFrames, a)
 
 keepSV :: MonadIO m => PtrSV -> PerlT s m ()
 keepSV sv = PerlT $ \perl (pool : otherFrames) -> do
-  liftIO $ s_SvREFCNT_inc_NN sv
+  liftIO $ svREFCNT_inc_NN sv
   return ((sv : pool) : otherFrames, ())
 keepAV :: MonadIO m => PtrAV -> PerlT s m ()
 keepAV av = keepSV (castPtr av)

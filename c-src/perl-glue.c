@@ -70,3 +70,15 @@ SV *glue_eval_pv(pTHX_ const char *p, I32 croak_on_error){
 #endif
     return eval_pv(p, croak_on_error);
 }
+
+SV *svREFCNT_inc(SV *sv){
+    return SvREFCNT_inc(sv);
+}
+
+SV *svREFCNT_inc_NN(SV *sv){
+    return SvREFCNT_inc_NN(sv);
+}
+
+SV *svREFCNT_inc_void(SV *sv){
+    SvREFCNT_inc_void(sv);
+}

@@ -46,3 +46,13 @@ executable test-eval
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
   extra-libraries:     perl
+
+executable test-monad
+  main-is:             TestMonad.hs
+  hs-source-dirs:      test
+                     , src
+  cc-options:          -DTRACK_PERL_GLUE
+  c-sources:           c-src/perl-glue.c
+  build-depends:       base ==4.6.*
+                     , transformers ==0.3.*
+  extra-libraries:     perl
