@@ -1,6 +1,3 @@
-//#define PERL_NO_SHORT_NAMES
-#undef USE_ITHREADS
-
 #include <EXTERN.h>
 #include <perl.h>
 
