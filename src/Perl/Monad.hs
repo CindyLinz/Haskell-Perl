@@ -3,6 +3,7 @@ module Perl.Monad
   where
 
 import Foreign
+import Foreign.C.String
 import Control.Monad
 import Data.Functor.Identity
 import Control.Monad.Trans.Class
@@ -47,6 +48,11 @@ liftScope :: Monad m => (forall s. PerlT s m a) -> PerlT s m a
 liftScope (PerlT act) = PerlT $ \perl (headFrame : otherFrames) -> do
   (otherFrames', a) <- act perl otherFrames
   return (headFrame : otherFrames', a)
+
+eval :: MonadIO m => CString -> PerlT s m PtrSV
+eval code = PerlT $ \perl frames -> do
+  a <- liftIO $ perl_eval_pv perl code 1
+  return (frames, a)
 
 instance Monad m => Monad (PerlT s m) where
   return a = PerlT $ \perl scopeFrames -> return (scopeFrames, a)
