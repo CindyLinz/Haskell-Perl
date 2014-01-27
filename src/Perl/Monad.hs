@@ -54,11 +54,6 @@ liftScope (PerlT act) = PerlT $ \perl (headFrame : otherFrames) -> do
   (otherFrames', a) <- act perl otherFrames
   return (headFrame : otherFrames', a)
 
-eval :: MonadIO m => CString -> PerlT s m PtrSV
-eval code = PerlT $ \perl frames -> do
-  a <- liftIO $ perl_eval_pv perl code 1
-  return (frames, a)
-
 instance Monad m => Monad (PerlT s m) where
   return a = PerlT $ \perl scopeFrames -> return (scopeFrames, a)
   f >>= k = PerlT $ \perl scopeFrames -> do
@@ -72,20 +67,3 @@ instance MonadTrans (PerlT s) where
 
 instance MonadIO m => MonadIO (PerlT s m) where
   liftIO = lift . liftIO
-
-svToInt :: MonadIO m => PtrSV -> PerlT s m IV
-svToInt sv = PerlT $ \perl frames -> do
-  a <- liftIO $ svIVx perl sv
-  return (frames, a)
-
-svToNum :: MonadIO m => PtrSV -> PerlT s m NV
-svToNum sv = PerlT $ \perl frames -> do
-  a <- liftIO $ svNVx perl sv
-  return (frames, a)
-
-svToStr :: MonadIO m => PtrSV -> PerlT s m (ForeignPtr CChar, StrLen)
-svToStr sv = PerlT $ \perl frames -> liftIO $ alloca $ \ptrLen -> do
-  ptrStr <- svPVbytex perl sv ptrLen
-  len <- peek ptrLen
-  fptrStr <- newForeignPtr_ ptrStr
-  return (frames, (fptrStr, len))

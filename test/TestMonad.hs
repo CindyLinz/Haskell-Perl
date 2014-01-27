@@ -1,6 +1,7 @@
 module Main where
 
 import Perl.Monad
+import Perl.MonadGlue
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
