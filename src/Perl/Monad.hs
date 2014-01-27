@@ -14,6 +14,7 @@ import Data.Functor.Identity
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
+import Perl.Type
 import Perl.Glue
 
 type ScopeFrame = [PtrSV]

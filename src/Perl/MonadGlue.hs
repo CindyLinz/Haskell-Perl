@@ -11,6 +11,7 @@ import Foreign.Marshal.Alloc
 import Control.Monad
 import Control.Monad.IO.Class
 
+import Perl.Type
 import Perl.Glue
 import Perl.Monad
 
