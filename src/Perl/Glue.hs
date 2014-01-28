@@ -24,12 +24,6 @@ foreign import ccall unsafe
   exit_perl :: PtrPerl -> IO ()
 
 ------
--- new var
-
-foreign import ccall unsafe
-  "Perl_newSV" perl_newSV :: PtrPerl -> StrLen -> IO PtrSV
-
-------
 -- ref count
 
 foreign import ccall safe
@@ -43,6 +37,18 @@ foreign import ccall unsafe
 
 foreign import ccall unsafe
   svREFCNT_inc_void :: PtrSV -> IO ()
+
+------
+-- new SV
+
+foreign import ccall unsafe
+  "Perl_newSV" perl_newSV :: PtrPerl -> StrLen -> IO PtrSV
+
+foreign import ccall unsafe
+  "Perl_newSVpvn_flags" perl_newSVpvn_flags :: PtrPerl -> CString -> StrLen -> CUInt -> IO PtrSV
+
+------
+-- write SV
 
 ------
 -- read SV
