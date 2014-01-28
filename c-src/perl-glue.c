@@ -9,7 +9,7 @@
 EXTERN_C void xs_init (pTHX);
 
 static int my_argc = 3;
-static char *my_argv[] = { "", "-e", "0", NULL };
+static char *my_argv[] = { "", "-e", "sub sin{sin@_}sub die{die@_}", NULL };
 static char *my_env[] = { NULL };
 
 static int running_perl = 0;

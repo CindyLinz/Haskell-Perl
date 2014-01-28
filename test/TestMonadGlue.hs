@@ -11,7 +11,7 @@ import Data.Array.Unsafe
 import Data.Array.MArray
 
 main = runPerlT $ do
-  cmd1 <- liftIO $ newCString "print 'Hi ', rand 10, ' ', sin(3), $/; sub sin { sin(@_) } sub die { die(@_) }"
+  cmd1 <- liftIO $ newCString "print 'Hi ', rand 10, ' ', sin(3), $/"
   eval cmd1
   liftIO $ free cmd1
 
