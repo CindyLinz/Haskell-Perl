@@ -9,6 +9,12 @@ import Foreign.C.String
 import Perl.Type
 
 ------
+-- stdlib
+
+foreign import ccall unsafe
+  "&free" p_free :: FunPtr (Ptr a -> IO ())
+
+------
 -- init / exit
 
 foreign import ccall unsafe
@@ -54,4 +60,16 @@ foreign import ccall safe
 -- eval
 
 foreign import ccall safe
-  "Perl_eval_pv" perl_eval_pv :: PtrPerl -> CString -> Int32 -> IO PtrSV
+  "Perl_eval_pv" perl_eval_pv :: PtrPerl -> CString -> CInt -> IO PtrSV
+
+------
+-- call
+
+foreign import ccall safe
+  "Perl_call_sv" perl_call_sv :: PtrPerl -> PtrSV -> CInt -> IO CInt
+
+foreign import ccall safe
+  "Perl_call_pv" perl_call_pv :: PtrPerl -> CString -> CInt -> IO CInt
+
+foreign import ccall safe
+  glue_call_pv :: PtrPerl -> CString -> CInt -> CInt -> Ptr PtrSV -> Ptr (Ptr PtrSV) -> IO CInt

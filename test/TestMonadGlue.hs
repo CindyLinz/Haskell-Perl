@@ -5,7 +5,9 @@ import Perl.MonadGlue
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
+import Foreign.Ptr
 import Control.Monad.IO.Class
+import Data.Array.Unsafe
 
 main = runPerlT $ do
   cmd1 <- liftIO $ newCString "print 'Hi ', rand 10, $/"
@@ -25,3 +27,9 @@ main = runPerlT $ do
     withForeignPtr fpStr2 $ \pStr2 -> do
       str <- peekCStringLen (pStr2, fromIntegral len2)
       putStrLn $ "pv = " ++ str
+
+  dieStr <- liftIO $ newCString "die"
+  fptrNull <- liftIO $ newForeignPtr_ nullPtr
+  emptyArgs <- liftIO $ unsafeForeignPtrToStorableArray fptrNull (1, 0)
+  callName dieStr 0 emptyArgs
+  liftIO $ free dieStr

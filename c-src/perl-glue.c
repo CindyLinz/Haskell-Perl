@@ -1,6 +1,7 @@
 #include <EXTERN.h>
 #include <perl.h>
 
+#include <stdlib.h>
 #ifdef TRACK_PERL_GLUE
 #include <stdio.h>
 #endif
@@ -90,4 +91,34 @@ NV svNVx(pTHX_ SV *sv){
 
 char *svPVbytex(pTHX_ SV *sv, STRLEN *len){
     return SvPVbytex(sv, (*len));
+}
+
+/* call */
+
+/* return: num of return values
+ */
+I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
+    dSP;
+    PUSHMARK(SP);
+#ifdef TRACK_PERL_GLUE
+    printf("glue_call_pv sub_name=%s, flags=%d, argc=%d, argv=%p, outv=%p\n", sub_name, flags, argc, (void*)argv, (void*)outv);
+#endif
+    if( argc ){
+        EXTEND(SP, argc);
+        { I32 i; for(i=0; i<argc; ++i){
+            PUSHs(argv[i]);
+        } }
+        PUTBACK;
+    }
+    {
+        I32 count = call_pv(sub_name, flags);
+        if( count > 0 ){
+            SV **rets = *outv = (SV**) malloc(sizeof(SV*) * count);
+            { I32 i; for(i=count-1; i>=0; --i){
+                rets[i] = POPs;
+            } }
+            PUTBACK;
+        }
+        return count;
+    }
 }

@@ -24,6 +24,7 @@ library
   -- other-modules:       
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
+                     , array ==0.4.*
   extra-libraries:     perl
 
 executable test-bare
@@ -35,6 +36,7 @@ executable test-bare
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
+                     , array ==0.4.*
   extra-libraries:     perl
 
 executable test-eval
@@ -45,6 +47,7 @@ executable test-eval
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
+                     , array ==0.4.*
   extra-libraries:     perl
 
 executable test-monad-glue
@@ -55,6 +58,7 @@ executable test-monad-glue
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
+                     , array ==0.4.*
   extra-libraries:     perl
 
 executable test-monad
@@ -65,4 +69,5 @@ executable test-monad
   c-sources:           c-src/perl-glue.c
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
+                     , array ==0.4.*
   extra-libraries:     perl
