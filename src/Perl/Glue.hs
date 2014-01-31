@@ -45,6 +45,12 @@ foreign import ccall unsafe
   "Perl_newSV" perl_newSV :: PtrPerl -> StrLen -> IO PtrSV
 
 foreign import ccall unsafe
+  "Perl_newSViv" perl_newSViv :: PtrPerl -> IV -> IO PtrSV
+
+foreign import ccall unsafe
+  "Perl_newSVnv" perl_newSVnv :: PtrPerl -> NV -> IO PtrSV
+
+foreign import ccall unsafe
   "Perl_newSVpvn_flags" perl_newSVpvn_flags :: PtrPerl -> CString -> StrLen -> CUInt -> IO PtrSV
 
 ------

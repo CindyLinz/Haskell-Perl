@@ -20,11 +20,21 @@ import Perl.Glue
 import Perl.Monad
 
 ------
---
+-- new SV
 
 newSV :: MonadIO m => StrLen -> PerlT s m PtrSV
 newSV len = PerlT $ \perl frames -> do
   sv <- liftIO $ perl_newSV perl len
+  return (frames, sv)
+
+newIntSV :: MonadIO m => IV -> PerlT s m PtrSV
+newIntSV iv = PerlT $ \perl frames -> do
+  sv <- liftIO $ perl_newSViv perl iv
+  return (frames, sv)
+
+newNumSV :: MonadIO m => NV -> PerlT s m PtrSV
+newNumSV nv = PerlT $ \perl frames -> do
+  sv <- liftIO $ perl_newSVnv perl nv
   return (frames, sv)
 
 newStrSV :: MonadIO m => Ptr CChar -> StrLen -> CUInt -> PerlT s m PtrSV

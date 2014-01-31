@@ -3,6 +3,7 @@ module Main where
 import Perl.Monad
 import Perl.Eval
 import Perl.FromSV
+import Perl.ToSV
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
