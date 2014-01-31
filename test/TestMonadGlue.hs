@@ -21,13 +21,12 @@ main = runPerlT $ do
 
   iv2 <- svToInt res2
   nv2 <- svToNum res2
-  (fpStr2, len2) <- svToStr res2
+  (pStr2, len2) <- svToStr res2
   liftIO $ do
     putStrLn $ "iv = " ++ show iv2
     putStrLn $ "nv = " ++ show nv2
-    withForeignPtr fpStr2 $ \pStr2 -> do
-      str <- peekCStringLen (pStr2, fromIntegral len2)
-      putStrLn $ "pv = " ++ str
+    str <- peekCStringLen (pStr2, fromIntegral len2)
+    putStrLn $ "pv = " ++ str
 
   sinStr <- liftIO $ newCString "sin"
   threeStr <- liftIO $ newCString "3"

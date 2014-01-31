@@ -45,12 +45,11 @@ svToNum sv = PerlT $ \perl frames -> do
   a <- liftIO $ svNVx perl sv
   return (frames, a)
 
-svToStr :: MonadIO m => PtrSV -> PerlT s m (ForeignPtr CChar, StrLen)
+svToStr :: MonadIO m => PtrSV -> PerlT s m CStringLen
 svToStr sv = PerlT $ \perl frames -> liftIO $ alloca $ \ptrLen -> do
   ptrStr <- svPVbytex perl sv ptrLen
   len <- peek ptrLen
-  fptrStr <- newForeignPtr_ ptrStr
-  return (frames, (fptrStr, len))
+  return (frames, (ptrStr, fromIntegral len))
 
 ------
 -- eval
