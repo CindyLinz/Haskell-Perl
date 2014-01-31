@@ -2,7 +2,6 @@
 module Perl.Eval where
 
 import Foreign.C.String
-import Foreign.Marshal.Alloc
 import Control.Monad.IO.Class
 
 import Perl.Type
