@@ -45,6 +45,7 @@ svToNum sv = PerlT $ \perl frames -> do
   a <- liftIO $ svNVx perl sv
   return (frames, a)
 
+-- the returned CStringLen is just temporary that is handled by perl
 svToStr :: MonadIO m => PtrSV -> PerlT s m CStringLen
 svToStr sv = PerlT $ \perl frames -> liftIO $ alloca $ \ptrLen -> do
   ptrStr <- svPVbytex perl sv ptrLen
