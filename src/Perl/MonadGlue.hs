@@ -20,6 +20,17 @@ import Perl.Glue
 import Perl.Monad
 
 ------
+-- ref count
+
+incRefCnt :: MonadIO m => PtrSV -> PerlT s m ()
+incRefCnt = liftIO . svREFCNT_inc_void_NN
+
+decRefCnt :: MonadIO m => PtrSV -> PerlT s m ()
+decRefCnt sv = PerlT $ \perl frames -> do
+  liftIO (perl_sv_free perl sv)
+  return (frames, ())
+
+------
 -- new SV
 
 newSV :: MonadIO m => StrLen -> PerlT s m PtrSV
