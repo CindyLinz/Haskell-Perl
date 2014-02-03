@@ -244,11 +244,11 @@ SV *svREFCNT_inc_NN(SV *sv){
     return SvREFCNT_inc_NN(sv);
 }
 
-SV *svREFCNT_inc_void(SV *sv){
+void svREFCNT_inc_void(SV *sv){
     SvREFCNT_inc_void(sv);
 }
 
-SV *svREFCNT_inc_void_NN(SV *sv){
+void svREFCNT_inc_void_NN(SV *sv){
     SvREFCNT_inc_void_NN(sv);
 }
 
