@@ -38,6 +38,9 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   svREFCNT_inc_void :: PtrSV -> IO ()
 
+foreign import ccall unsafe
+  svREFCNT_inc_void_NN :: PtrSV -> IO ()
+
 ------
 -- new SV
 

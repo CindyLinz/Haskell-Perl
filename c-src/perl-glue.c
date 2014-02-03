@@ -248,6 +248,10 @@ SV *svREFCNT_inc_void(SV *sv){
     SvREFCNT_inc_void(sv);
 }
 
+SV *svREFCNT_inc_void_NN(SV *sv){
+    SvREFCNT_inc_void_NN(sv);
+}
+
 void glue_sv_setpvn(pTHX_ SV *sv, const char *str, const STRLEN len){
 #ifdef TRACK_PERL_GLUE
     printf("glue_sv_setpvn(%p)\n", (void*)aTHX);
