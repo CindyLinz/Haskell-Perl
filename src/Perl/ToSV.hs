@@ -13,6 +13,11 @@ import Perl.MonadGlue
 class ToSV m a where
   toSV :: a -> PerlT s m PtrSV
 
+instance MonadIO m => ToSV m PtrSV where
+  toSV sv = do
+    incRefCnt sv
+    return sv
+
 instance MonadIO m => ToSV m Int where
   toSV n = newIntSV (fromIntegral n)
 
