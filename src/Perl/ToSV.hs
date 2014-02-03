@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances, ExistentialQuantification #-}
 module Perl.ToSV
   where
 
@@ -28,3 +28,5 @@ instance MonadIO m => ToSV m String where
   toSV str = PerlT $ \perl frames ->
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (newStrSV cstr (fromIntegral len) 0) perl frames
+
+data ToSVObj m = forall a. ToSV m a => ToSVObj a
