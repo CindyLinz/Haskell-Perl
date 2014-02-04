@@ -10,7 +10,6 @@ import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 
 import Control.Monad
-import Data.Functor.Identity
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
@@ -23,7 +22,6 @@ emptyFrame = []
 newtype PerlT s m a = PerlT
   { unPerlT :: PtrPerl -> [ScopeFrame] -> m ([ScopeFrame], a)
   }
-type Perl s = PerlT s Identity
 
 runPerlT :: MonadIO m => (forall s. PerlT s m a) -> m a
 runPerlT act = do
