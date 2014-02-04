@@ -22,6 +22,7 @@ emptyFrame = []
 newtype PerlT s m a = PerlT
   { unPerlT :: PtrPerl -> [ScopeFrame] -> m ([ScopeFrame], a)
   }
+type Perl s = PerlT s IO
 
 runPerlT :: MonadIO m => (forall s. PerlT s m a) -> m a
 runPerlT act = do
