@@ -88,3 +88,12 @@ foreign import ccall safe
 
 foreign import ccall safe
   glue_call_pv :: PtrPerl -> CString -> CInt -> CInt -> Ptr PtrSV -> Ptr (Ptr PtrSV) -> IO CInt
+
+------
+-- sub wrapper
+
+foreign import ccall unsafe
+  "wrapper" wrap_sub_wrapper :: (PtrPerl -> PtrCV -> IO ()) -> IO (FunPtr (PtrPerl -> PtrCV -> IO ()))
+
+foreign import ccall unsafe
+  wrap_sub :: PtrPerl -> (FunPtr (PtrPerl -> PtrCV -> IO ())) -> IO PtrCV

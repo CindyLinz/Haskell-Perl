@@ -11,7 +11,7 @@ import Data.Array.Unsafe
 import Data.Array.MArray
 
 main = runPerlT $ do
-  cmd1 <- liftIO $ newCString "print 'Hi ', rand 10, ' ', sin(3), $/"
+  cmd1 <- liftIO $ newCString "sub call { $_[0]('abc') } print 'Hi ', rand 10, ' ', sin(3), $/"
   eval cmd1
   liftIO $ free cmd1
 
@@ -38,6 +38,12 @@ main = runPerlT $ do
   sinRetNum <- svToNum sinRet0
   liftIO $ free sinStr
   liftIO $ putStrLn $ show sinRetNum
+
+  subCV <- wrapSub (\perl cv -> putStrLn "Hello sub")
+  callStr <- liftIO $ newCString "call"
+  callArgs <- liftIO $ newListArray (1,1) [castPtr subCV]
+  callName callStr 0 callArgs
+  liftIO $ free callStr
 
   dieStr <- liftIO $ newCString "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr

@@ -103,3 +103,12 @@ callName name flag args = PerlT $ \perl frames -> liftIO . withStorableArray arg
       fptrOut <- newForeignPtr p_free ptrOut
       outArray <- unsafeForeignPtrToStorableArray fptrOut (fromIntegral 1, fromIntegral outn)
       return (frames, outArray)
+
+------
+-- sub
+
+wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrCV
+wrapSub fun = PerlT $ \perl frames -> do
+  funPtr <- liftIO $ wrap_sub_wrapper fun
+  cv <- liftIO $ wrap_sub perl funPtr
+  return (frames, cv)

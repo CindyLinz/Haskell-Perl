@@ -21,3 +21,6 @@ type PtrAV = Ptr AV
 
 data HV
 type PtrHV = Ptr HV
+
+data CV
+type PtrCV = Ptr CV
