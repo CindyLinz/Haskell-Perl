@@ -331,15 +331,12 @@ SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
 }
 
 I32 get_sub_arg_num(pTHX){
-    dSP;
-    dMARK;
-    return (I32)(SP - MARK);
+    return (I32)(PL_stack_sp - PL_stack_base - TOPMARK);
 }
 
 void get_sub_args(pTHX_ SV** out_buffer, I32 items){
     I32 i;
-    dMARK;
-    const I32 ax = (I32)(MARK - PL_stack_base + 1);
+    const I32 ax = (I32)(TOPMARK + 1);
     for(i=0; i<items; ++i)
         out_buffer[i] = PL_stack_base[ax+i];
 }
@@ -347,7 +344,10 @@ void get_sub_args(pTHX_ SV** out_buffer, I32 items){
 void set_sub_returns(pTHX_ SV** ret_buffer, I32 items){
     I32 i;
     dSP;
-    EXTEND(SP, items);
+    const I32 ax = (I32)(POPMARK + 1);
+    if( ax + items > AvMAX(PL_curstack) )
+        EXTEND(PL_stack_base, ax + items);
     for(i=0; i<items; ++i)
-        PUSHs(ret_buffer[i]);
+        PL_stack_base[ax+i] = ret_buffer[i];
+    PL_stack_sp = PL_stack_base + ax + items - 1;
 }

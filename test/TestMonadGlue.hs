@@ -55,6 +55,7 @@ perl = runPerlT $ do
       i <- liftPerl $ svToInt elem
       liftIO $ putStrLn $ "  got: " ++ show i
       liftPerl $ setSVInt elem (i+i)
+    liftIO (newListArray (1,2) $ reverse argList) >>= setSubReturns
   callStr <- liftIO $ newCString "call"
   callArgList <- forM [3,4,5] newNumSV
   callArgs <- liftIO $ newListArray (1,4) (castPtr subCV : callArgList)

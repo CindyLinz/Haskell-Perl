@@ -139,8 +139,9 @@ getSubArgs = PerlSubT $ \perl cv -> liftIO $ do
     get_sub_args perl ptrArgs items
   return args
 
+-- must be the last step in the sub that modify the perl stack
 setSubReturns :: (Ix i, Integral i, MonadIO m) => StorableArray i PtrSV -> PerlSubT s m ()
 setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
   (a, b) <- getBounds returns
   withStorableArray returns $ \ptrReturns -> do
-    set_sub_returns perl ptrReturns (fromIntegral (b - a - 1))
+    set_sub_returns perl ptrReturns (fromIntegral (b - a + 1))
