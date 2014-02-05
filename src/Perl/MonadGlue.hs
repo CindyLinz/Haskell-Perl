@@ -74,6 +74,29 @@ svToStr sv = PerlT $ \perl frames -> liftIO $ alloca $ \ptrLen -> do
   return (frames, (ptrStr, fromIntegral len))
 
 ------
+-- write SV
+
+setSVInt :: MonadIO m => PtrSV -> IV -> PerlT s m ()
+setSVInt sv a = PerlT $ \perl frames -> do
+  liftIO $ perl_sv_setiv_mg perl sv a
+  return (frames, ())
+
+setSVNum :: MonadIO m => PtrSV -> NV -> PerlT s m ()
+setSVNum sv a = PerlT $ \perl frames -> do
+  liftIO $ perl_sv_setnv_mg perl sv a
+  return (frames, ())
+
+setSVStr :: MonadIO m => PtrSV -> CStringLen -> PerlT s m ()
+setSVStr sv (ptrStr, len) = PerlT $ \perl frames -> do
+  liftIO $ perl_sv_setpvn_mg perl sv ptrStr (fromIntegral len)
+  return (frames, ())
+
+setSVSV :: MonadIO m => PtrSV -> PtrSV -> PerlT s m ()
+setSVSV dst src = PerlT $ \perl frames -> do
+  liftIO $ perl_sv_setsv_mg perl dst src
+  return (frames, ())
+
+------
 -- eval
 
 eval :: MonadIO m => CString -> PerlT s m PtrSV

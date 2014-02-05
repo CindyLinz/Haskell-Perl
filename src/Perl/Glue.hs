@@ -59,6 +59,18 @@ foreign import ccall unsafe
 ------
 -- write SV
 
+foreign import ccall safe
+  "Perl_sv_setiv_mg" perl_sv_setiv_mg :: PtrPerl -> PtrSV -> IV -> IO ()
+
+foreign import ccall safe
+  "Perl_sv_setnv_mg" perl_sv_setnv_mg :: PtrPerl -> PtrSV -> NV -> IO ()
+
+foreign import ccall safe
+  "Perl_sv_setpvn_mg" perl_sv_setpvn_mg :: PtrPerl -> PtrSV -> CString -> StrLen -> IO ()
+
+foreign import ccall safe
+  "Perl_sv_setsv_mg" perl_sv_setsv_mg :: PtrPerl -> PtrSV -> PtrSV -> IO ()
+
 ------
 -- read SV
 
