@@ -35,24 +35,24 @@ decRefCnt sv = PerlT $ \perl frames -> do
 -- new SV
 
 newSV :: MonadIO m => StrLen -> PerlT s m PtrSV
-newSV len = PerlT $ \perl frames -> do
+newSV len = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSV perl len
-  return (frames, sv)
+  return ((sv:frame):frames, sv)
 
 newIntSV :: MonadIO m => IV -> PerlT s m PtrSV
-newIntSV iv = PerlT $ \perl frames -> do
+newIntSV iv = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSViv perl iv
-  return (frames, sv)
+  return ((sv:frame):frames, sv)
 
 newNumSV :: MonadIO m => NV -> PerlT s m PtrSV
-newNumSV nv = PerlT $ \perl frames -> do
+newNumSV nv = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSVnv perl nv
-  return (frames, sv)
+  return ((sv:frame):frames, sv)
 
 newStrSV :: MonadIO m => Ptr CChar -> StrLen -> CUInt -> PerlT s m PtrSV
-newStrSV str len flag = PerlT $ \perl frames -> do
+newStrSV str len flag = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSVpvn_flags perl str len flag
-  return (frames, sv)
+  return ((sv:frame):frames, sv)
 
 ------
 -- read SV

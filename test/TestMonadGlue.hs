@@ -11,7 +11,13 @@ import Control.Monad.IO.Class
 import Data.Array.Unsafe
 import Data.Array.MArray
 
-main = runPerlT $ do
+main = do
+  putStrLn "test begin."
+  perl
+  putStrLn "test end."
+
+
+perl = runPerlT $ do
   cmd1 <- liftIO $ newCString "sub call { my $func = shift; @res = $func->(@_); print qq( res: @res$/) } print 'Hi ', rand 10, ' ', sin(3), $/"
   eval cmd1
   liftIO $ free cmd1
@@ -54,11 +60,9 @@ main = runPerlT $ do
   callArgs <- liftIO $ newListArray (1,4) (castPtr subCV : callArgList)
   callName callStr 0 callArgs
   liftIO $ free callStr
-  forM_ callArgList decRefCnt
-  decRefCnt subCV
 
   dieStr <- liftIO $ newCString "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr
   emptyArgs <- liftIO $ unsafeForeignPtrToStorableArray fptrNull (1, 0)
-  callName dieStr 0 emptyArgs
+  callName dieStr 8 emptyArgs
   liftIO $ free dieStr

@@ -36,12 +36,11 @@ class MonadIO m => CallType m r | r -> m where
   collect :: (forall s. [PtrSV] -> PerlT s m [PtrSV]) -> String -> r
 
 instance MonadIO m => CallType m (PerlT s m (StorableArray Int PtrSV)) where
-  collect args name = do
+  collect args name = scope $ do
     argList <- args []
     res <- PerlT $ \perl frames -> liftIO $ withCString name $ \cName -> do
       argArray <- newListArray (1, length argList) argList
       unPerlT (G.callName cName 0 argArray) perl frames
-    forM argList G.decRefCnt
     return res
 
 instance (ToSV m svObj, MonadIO m, CallType m r) => CallType m (svObj -> r) where
