@@ -108,7 +108,7 @@ foreign import ccall unsafe
   "wrapper" wrap_sub_wrapper :: (PtrPerl -> PtrCV -> IO ()) -> IO (FunPtr (PtrPerl -> PtrCV -> IO ()))
 
 foreign import ccall unsafe
-  wrap_sub :: PtrPerl -> (FunPtr (PtrPerl -> PtrCV -> IO ())) -> IO PtrCV
+  wrap_sub :: PtrPerl -> (FunPtr (PtrPerl -> PtrCV -> IO ())) -> IO PtrSV
 
 foreign import ccall unsafe
   get_sub_arg_num :: PtrPerl -> IO CInt

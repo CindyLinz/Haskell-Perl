@@ -12,7 +12,7 @@ import Data.Array.Unsafe
 import Data.Array.MArray
 
 main = runPerlT $ do
-  cmd1 <- liftIO $ newCString "sub call { @res = $_[0](@_[1..$#_]); print qq( res: @res$/) } print 'Hi ', rand 10, ' ', sin(3), $/"
+  cmd1 <- liftIO $ newCString "sub call { my $func = shift; @res = $func->(@_); print qq( res: @res$/) } print 'Hi ', rand 10, ' ', sin(3), $/"
   eval cmd1
   liftIO $ free cmd1
 

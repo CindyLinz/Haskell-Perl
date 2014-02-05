@@ -77,13 +77,13 @@ liftPerl act = PerlSubT $ \perl _ -> do
   ([], a) <- unPerlT act perl []
   return a
 
-wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrCV
+wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrSV
 wrapSub fun = PerlT $ \perl frames -> do
   funPtr <- liftIO $ wrap_sub_wrapper fun
   cv <- liftIO $ wrap_sub perl funPtr
   return (frames, cv)
 
-sub :: MonadIO m => (forall m1. MonadIO m1 => PerlSubT s m1 ()) -> PerlT s m PtrCV
+sub :: MonadIO m => (forall m1. MonadIO m1 => PerlSubT s m1 ()) -> PerlT s m PtrSV
 sub def = wrapSub $ \perl selfCV ->
   unPerlSubT def perl selfCV
 

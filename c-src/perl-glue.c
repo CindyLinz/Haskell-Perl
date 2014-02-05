@@ -301,13 +301,13 @@ I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* 
     }
 }
 
-CV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
+SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
     CV *cv = MUTABLE_CV(newSV_type(SVt_PVCV));
     CvFILE(cv) = "Haskell";
     CvANON_on(cv);
     CvISXSUB_on(cv);
     CvXSUB(cv) = subaddr;
-    return cv;
+    return Perl_newRV_noinc(aTHX_ (SV*)cv);
 }
 
 I32 get_sub_arg_num(pTHX){
