@@ -5,8 +5,12 @@ module Perl.Glue
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
+import Foreign.Ptr
 
 import Perl.Type
+
+foreign export ccall
+  freeHaskellFunPtr :: FunPtr a -> IO ()
 
 ------
 -- stdlib
@@ -108,7 +112,7 @@ foreign import ccall unsafe
   "wrapper" wrap_sub_wrapper :: (PtrPerl -> PtrCV -> IO ()) -> IO (FunPtr (PtrPerl -> PtrCV -> IO ()))
 
 foreign import ccall unsafe
-  wrap_sub :: PtrPerl -> (FunPtr (PtrPerl -> PtrCV -> IO ())) -> IO PtrSV
+  wrap_sub :: PtrPerl -> FunPtr (PtrPerl -> PtrCV -> IO ()) -> IO PtrSV
 
 foreign import ccall unsafe
   get_sub_arg_num :: PtrPerl -> IO CInt

@@ -7,6 +7,7 @@
 #endif
 
 EXTERN_C void xs_init (pTHX);
+EXTERN_C void freeHaskellFunPtr(XSUBADDR_t);
 
 static int my_argc = 3;
 static char *my_argv[] = { "", "-e",
@@ -301,13 +302,32 @@ I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* 
     }
 }
 
+static int haskell_cv_free(pTHX_ SV *cv, MAGIC *mg){
+#ifdef TRACK_PERL_GLUE
+    printf("free cv subaddr %p\n", (void*)CvXSUB((CV*)cv));
+#endif
+    freeHaskellFunPtr((XSUBADDR_t)((void*)CvXSUB((CV*)cv)));
+    return 0;
+}
+
+static MGVTBL haskell_cv_vtbl = {
+    0, 0, 0, 0,
+    haskell_cv_free
+};
+
 SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
+    SV *cv_ref;
     CV *cv = MUTABLE_CV(newSV_type(SVt_PVCV));
     CvFILE(cv) = "Haskell";
     CvANON_on(cv);
     CvISXSUB_on(cv);
     CvXSUB(cv) = subaddr;
-    return Perl_newRV_noinc(aTHX_ (SV*)cv);
+    sv_magicext((SV*)cv, (SV*)cv, PERL_MAGIC_ext, &haskell_cv_vtbl, 0, 0);
+    cv_ref = Perl_newRV_noinc(aTHX_ (SV*)cv);
+#ifdef TRACK_PERL_GLUE
+    printf("new cv %p %p %p\n", (void*)cv_ref, (void*)cv, (void*)subaddr);
+#endif
+    return cv_ref;
 }
 
 I32 get_sub_arg_num(pTHX){

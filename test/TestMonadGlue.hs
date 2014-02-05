@@ -55,6 +55,7 @@ main = runPerlT $ do
   callName callStr 0 callArgs
   liftIO $ free callStr
   forM_ callArgList decRefCnt
+  decRefCnt subCV
 
   dieStr <- liftIO $ newCString "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr
