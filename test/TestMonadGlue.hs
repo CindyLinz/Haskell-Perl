@@ -6,12 +6,13 @@ import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
+import Control.Monad
 import Control.Monad.IO.Class
 import Data.Array.Unsafe
 import Data.Array.MArray
 
 main = runPerlT $ do
-  cmd1 <- liftIO $ newCString "sub call { $_[0]('abc') } print 'Hi ', rand 10, ' ', sin(3), $/"
+  cmd1 <- liftIO $ newCString "sub call { @res = $_[0](@_[1..$#_]); print qq( res: @res$/) } print 'Hi ', rand 10, ' ', sin(3), $/"
   eval cmd1
   liftIO $ free cmd1
 
@@ -39,11 +40,21 @@ main = runPerlT $ do
   liftIO $ free sinStr
   liftIO $ putStrLn $ show sinRetNum
 
-  subCV <- wrapSub (\perl cv -> putStrLn "Hello sub")
+  --subCV <- wrapSub (\perl cv -> putStrLn "Hello sub")
+  subCV <- sub $ do
+    args <- getSubArgs
+    argList <- liftIO $ getElems args
+    liftIO $ putStrLn "Hello sub:"
+    forM_ argList $ \elem -> do
+      i <- liftPerl $ svToInt elem
+      liftIO $ putStrLn $ "  got: " ++ show i
+      liftPerl $ setSVInt elem (i+i)
   callStr <- liftIO $ newCString "call"
-  callArgs <- liftIO $ newListArray (1,1) [castPtr subCV]
+  callArgList <- forM [3,4,5] newNumSV
+  callArgs <- liftIO $ newListArray (1,4) (castPtr subCV : callArgList)
   callName callStr 0 callArgs
   liftIO $ free callStr
+  forM_ callArgList decRefCnt
 
   dieStr <- liftIO $ newCString "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr

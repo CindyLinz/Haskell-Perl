@@ -309,3 +309,25 @@ CV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
     CvXSUB(cv) = subaddr;
     return cv;
 }
+
+I32 get_sub_arg_num(pTHX){
+    dSP;
+    dMARK;
+    return (I32)(SP - MARK);
+}
+
+void get_sub_args(pTHX_ SV** out_buffer, I32 items){
+    I32 i;
+    dMARK;
+    const I32 ax = (I32)(MARK - PL_stack_base + 1);
+    for(i=0; i<items; ++i)
+        out_buffer[i] = PL_stack_base[ax+i];
+}
+
+void set_sub_returns(pTHX_ SV** ret_buffer, I32 items){
+    I32 i;
+    dSP;
+    EXTEND(SP, items);
+    for(i=0; i<items; ++i)
+        PUSHs(ret_buffer[i]);
+}

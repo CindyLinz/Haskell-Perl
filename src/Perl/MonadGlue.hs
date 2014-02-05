@@ -7,6 +7,7 @@ import Foreign.C.String
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
+import Foreign.Marshal.Array
 
 import Control.Monad
 import Control.Monad.IO.Class
@@ -130,8 +131,16 @@ callName name flag args = PerlT $ \perl frames -> liftIO . withStorableArray arg
 ------
 -- sub
 
-wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrCV
-wrapSub fun = PerlT $ \perl frames -> do
-  funPtr <- liftIO $ wrap_sub_wrapper fun
-  cv <- liftIO $ wrap_sub perl funPtr
-  return (frames, cv)
+getSubArgs :: (Ix i, Num i, MonadIO m) => PerlSubT s m (StorableArray i PtrSV)
+getSubArgs = PerlSubT $ \perl cv -> liftIO $ do
+  items <- get_sub_arg_num perl
+  args <- newArray_ (1, fromIntegral items)
+  withStorableArray args $ \ptrArgs ->
+    get_sub_args perl ptrArgs items
+  return args
+
+setSubReturns :: (Ix i, Integral i, MonadIO m) => StorableArray i PtrSV -> PerlSubT s m ()
+setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
+  (a, b) <- getBounds returns
+  withStorableArray returns $ \ptrReturns -> do
+    set_sub_returns perl ptrReturns (fromIntegral (b - a - 1))

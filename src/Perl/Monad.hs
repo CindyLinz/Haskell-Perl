@@ -67,3 +67,34 @@ instance MonadTrans (PerlT s) where
 
 instance MonadIO m => MonadIO (PerlT s m) where
   liftIO = lift . liftIO
+
+newtype PerlSubT s m a = PerlSubT
+  { unPerlSubT :: PtrPerl -> PtrCV -> m a
+  }
+
+liftPerl :: Monad m => PerlT s m a -> PerlSubT s m a
+liftPerl act = PerlSubT $ \perl _ -> do
+  ([], a) <- unPerlT act perl []
+  return a
+
+wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrCV
+wrapSub fun = PerlT $ \perl frames -> do
+  funPtr <- liftIO $ wrap_sub_wrapper fun
+  cv <- liftIO $ wrap_sub perl funPtr
+  return (frames, cv)
+
+sub :: MonadIO m => (forall m1. MonadIO m1 => PerlSubT s m1 ()) -> PerlT s m PtrCV
+sub def = wrapSub $ \perl selfCV ->
+  unPerlSubT def perl selfCV
+
+instance Monad m => Monad (PerlSubT s m) where
+  return a = PerlSubT $ \perl cv -> return a
+  f >>= k = PerlSubT $ \perl cv -> do
+    a <- unPerlSubT f perl cv
+    unPerlSubT (k a) perl cv
+
+instance MonadTrans (PerlSubT s) where
+  lift act = PerlSubT $ \_ _ -> act
+
+instance MonadIO m => MonadIO (PerlSubT s m) where
+  liftIO = lift . liftIO
