@@ -10,23 +10,23 @@ import Perl.Type
 import Perl.Monad
 import Perl.MonadGlue
 
-class ToSV m a where
-  toSV :: a -> PerlT s m PtrSV
+class ToSV a where
+  toSV :: MonadIO m => a -> PerlT s m PtrSV
 
-instance MonadIO m => ToSV m PtrSV where
+instance ToSV PtrSV where
   toSV sv = do
     incRefCnt sv
     return sv
 
-instance MonadIO m => ToSV m Int where
+instance ToSV Int where
   toSV n = newIntSV (fromIntegral n)
 
-instance MonadIO m => ToSV m Double where
+instance ToSV Double where
   toSV d = newNumSV (CDouble d)
 
-instance MonadIO m => ToSV m String where
+instance ToSV String where
   toSV str = PerlT $ \perl frames ->
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (newStrSV cstr (fromIntegral len) 0) perl frames
 
-data ToSVObj m = forall a. ToSV m a => ToSVObj a
+data ToSVObj = forall a. ToSV a => ToSVObj a

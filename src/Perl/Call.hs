@@ -43,7 +43,7 @@ instance MonadIO m => CallType m (PerlT s m (StorableArray Int PtrSV)) where
       unPerlT (G.callName cName 0 argArray) perl frames
     return res
 
-instance (ToSV m svObj, MonadIO m, CallType m r) => CallType m (svObj -> r) where
+instance (ToSV svObj, MonadIO m, CallType m r) => CallType m (svObj -> r) where
   collect args name svObj = collect
     ( \later -> do
       sv <- toSV svObj
