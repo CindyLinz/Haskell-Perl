@@ -47,7 +47,7 @@ instance (ToSV svObj, MonadIO m, CallType m r) => CallType m (svObj -> r) where
   collect args name svObj = collect
     ( \later -> do
       sv <- toSV svObj
-      return $ sv : later
+      args $ sv : later
     ) name
 
 call :: (MonadIO m, CallType m r) => String -> r
