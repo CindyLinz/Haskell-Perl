@@ -38,7 +38,7 @@ perl = runPerlT $ do
 
   sinStr <- liftIO $ newCString "sin"
   threeStr <- liftIO $ newCString "3"
-  threeSV <- newStrSV threeStr 1 0
+  threeSV <- newStrSV threeStr 1
   liftIO $ free threeStr
   sinArgs <- liftIO $ newArray (1,1) threeSV
   sinRet <- callName sinStr 0 sinArgs

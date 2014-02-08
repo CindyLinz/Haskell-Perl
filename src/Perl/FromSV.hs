@@ -15,7 +15,7 @@ class FromSV a where
   fromSV :: MonadIO m => PtrSV -> PerlT s m a
 
 instance FromSV PtrSV where
-  fromSVNon = newSV 0
+  fromSVNon = newSV
   fromSV sv = do
     incRefCnt sv
     return sv

@@ -63,6 +63,18 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   "Perl_newSVpvn_flags" perl_newSVpvn_flags :: PtrPerl -> CString -> StrLen -> CUInt -> IO PtrSV
 
+foreign import ccall unsafe
+  "Perl_sv_newmortal" perl_sv_newmortal :: PtrPerl -> IO PtrSV
+
+foreign import ccall unsafe
+  newSViv_mortal :: PtrPerl -> IV -> IO PtrSV
+
+foreign import ccall unsafe
+  newSVnv_mortal :: PtrPerl -> NV -> IO PtrSV
+
+foreign import ccall unsafe
+  "Perl_sv_mortalcopy" perl_sv_mortalcopy :: PtrPerl -> PtrSV -> IO PtrSV
+
 ------
 -- write SV
 

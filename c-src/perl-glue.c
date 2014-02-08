@@ -87,6 +87,14 @@ void svREFCNT_inc_void_NN(SV *sv){
     SvREFCNT_inc_void_NN(sv);
 }
 
+SV *newSViv_mortal(pTHX_ IV i){
+    return sv_2mortal(newSViv(i));
+}
+
+SV *newSVnv_mortal(pTHX_ NV n){
+    return sv_2mortal(newSVnv(n));
+}
+
 void glue_sv_setpvn(pTHX_ SV *sv, const char *str, const STRLEN len){
 #ifdef TRACK_PERL_GLUE
     printf("glue_sv_setpvn(%p)\n", (void*)aTHX);

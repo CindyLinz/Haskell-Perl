@@ -17,6 +17,7 @@ import Data.Array.Unsafe
 import Data.Ix
 
 import Perl.Type
+import Perl.Constant
 import Perl.Glue
 import Perl.Monad
 
@@ -34,9 +35,9 @@ decRefCnt sv = PerlT $ \perl frames -> do
 ------
 -- new SV
 
-newSV :: MonadIO m => StrLen -> PerlT s m PtrSV
-newSV len = PerlT $ \perl (frame:frames) -> do
-  sv <- liftIO $ perl_newSV perl len
+newSV :: MonadIO m => PerlT s m PtrSV
+newSV = PerlT $ \perl (frame:frames) -> do
+  sv <- liftIO $ perl_newSV perl 0
   return ((sv:frame):frames, sv)
 
 newIntSV :: MonadIO m => IV -> PerlT s m PtrSV
@@ -49,10 +50,35 @@ newNumSV nv = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSVnv perl nv
   return ((sv:frame):frames, sv)
 
-newStrSV :: MonadIO m => Ptr CChar -> StrLen -> CUInt -> PerlT s m PtrSV
-newStrSV str len flag = PerlT $ \perl (frame:frames) -> do
-  sv <- liftIO $ perl_newSVpvn_flags perl str len flag
+newStrSV :: MonadIO m => Ptr CChar -> StrLen -> PerlT s m PtrSV
+newStrSV str len = PerlT $ \perl (frame:frames) -> do
+  sv <- liftIO $ perl_newSVpvn_flags perl str len 0
   return ((sv:frame):frames, sv)
+
+newSVMortal :: MonadIO m => PerlT s m PtrSV
+newSVMortal = PerlT $ \perl frames -> do
+  sv <- liftIO $ perl_sv_newmortal perl
+  return (frames, sv)
+
+newIntSVMortal :: MonadIO m => IV -> PerlT s m PtrSV
+newIntSVMortal iv = PerlT $ \perl frames -> do
+  sv <- liftIO $ newSViv_mortal perl iv
+  return (frames, sv)
+
+newNumSVMortal :: MonadIO m => NV -> PerlT s m PtrSV
+newNumSVMortal nv = PerlT $ \perl frames -> do
+  sv <- liftIO $ newSVnv_mortal perl nv
+  return (frames, sv)
+
+newStrSVMortal :: MonadIO m => Ptr CChar -> StrLen -> PerlT s m PtrSV
+newStrSVMortal str len = PerlT $ \perl frames -> do
+  sv <- liftIO $ perl_newSVpvn_flags perl str len const_SVs_TEMP
+  return (frames, sv)
+
+newSVSVMortal :: MonadIO m => PtrSV -> PerlT s m PtrSV
+newSVSVMortal old = PerlT $ \perl frames -> do
+  sv <- liftIO $ perl_sv_mortalcopy perl old
+  return (frames, sv)
 
 ------
 -- read SV
