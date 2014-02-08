@@ -20,8 +20,6 @@ instance SubReturn [ToSVObj] where
     retSVList <- liftPerl $ forM retList (\(ToSVObj a) -> toSVMortal a)
     liftPerl $ forM_ retSVList G.incRefCnt
     let len = length retSVList
-    liftIO $ putStrLn $ "ret len = " ++ show len
-    liftIO $ putStrLn $ "ret = " ++ show retSVList
     rets <- liftIO $ newListArray (1,len) retSVList
     G.setSubReturns rets
 
