@@ -72,9 +72,9 @@ newtype PerlSubT s m a = PerlSubT
   { unPerlSubT :: PtrPerl -> PtrCV -> m a
   }
 
-liftPerl :: Monad m => PerlT s m a -> PerlSubT s m a
+liftPerl :: MonadIO m => (forall s. PerlT s m a) -> PerlSubT s m a
 liftPerl act = PerlSubT $ \perl _ -> do
-  ([], a) <- unPerlT act perl []
+  ([], a) <- unPerlT (scope act) perl []
   return a
 
 wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrSV
@@ -83,8 +83,8 @@ wrapSub fun = PerlT $ \perl (frame:frames) -> do
   cv <- liftIO $ wrap_sub perl funPtr
   return ((castPtr cv:frame):frames, cv)
 
-sub :: MonadIO m => (forall m1. MonadIO m1 => PerlSubT s m1 ()) -> PerlT s m PtrSV
-sub def = wrapSub $ \perl selfCV ->
+makeSub :: MonadIO m => (forall s. PerlSubT s IO ()) -> PerlT s m PtrSV
+makeSub def = wrapSub $ \perl selfCV ->
   unPerlSubT def perl selfCV
 
 instance Monad m => Monad (PerlSubT s m) where

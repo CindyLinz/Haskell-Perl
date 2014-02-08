@@ -48,7 +48,7 @@ perl = runPerlT $ do
   liftIO $ putStrLn $ show sinRetNum
 
   --subCV <- wrapSub (\perl cv -> putStrLn "Hello sub")
-  subCV <- sub $ do
+  subCV <- makeSub $ do
     args <- getSubArgs
     argList <- liftIO $ getElems args
     liftIO $ putStrLn "Hello sub:"

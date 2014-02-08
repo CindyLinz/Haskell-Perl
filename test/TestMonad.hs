@@ -5,6 +5,7 @@ import Perl.Eval
 import Perl.FromSV
 import Perl.ToSV
 import Perl.Call
+import Perl.Sub
 import Perl.Type
 import Foreign.C.String
 import Foreign.ForeignPtr
@@ -13,7 +14,7 @@ import Control.Monad.IO.Class
 import Data.Array.Storable
 
 main = runPerlT $ do
-  res <- eval "print 'Hi ', rand 10, $/; use Scalar::Util qw(dualvar); dualvar 3 + 4.5, 'Good' "
+  res <- eval "sub call { my $func = shift; @res = $func->(@_); local $\" = ','; print qq( res: @res$/) } print 'Hi ', rand 10, $/; use Scalar::Util qw(dualvar); dualvar 3 + 4.5, 'Good' "
   n <- fromSV res
   d <- fromSV res
   s <- fromSV res
@@ -26,3 +27,30 @@ main = runPerlT $ do
   sinRet0 <- liftIO $ readArray sinRet 1
   sinRetNum <- fromSV sinRet0
   liftIO $ putStrLn $ show (sinRetNum :: Double)
+
+  cv <- sub $ \a b c -> do
+    return () :: PerlSubT s IO ()
+    let
+      _ = a :: Double
+      _ = b :: Double
+      _ = c :: Double
+    let det = b * b - 4 * a * c
+    if det == 0
+      then do
+        liftIO $ putStrLn $ "1 ans = " ++ show (- b / (2 * a))
+        return [ToSVObj (- b / (2 * a)) ]
+      else if det < 0
+        then do
+          liftIO $ putStrLn $ "0 ans"
+          return [ToSVObj "No real roots"]
+        else do
+          liftIO $ putStrLn $ "2 ans"
+          return [ToSVObj ( (-b + sqrt det) / (2 * a) ), ToSVObj ( (-b - sqrt det) / (2 * a) )]
+  sqrAns <- call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
+  sqrAns2 <- call "call" cv (1 :: Double) (3 :: Double) (2 :: Double)
+  sqrAns3 <- call "call" cv (1 :: Double) (1 :: Double) (1 :: Double)
+  let
+    _ = sqrAns :: StorableArray Int PtrSV
+    _ = sqrAns2 :: StorableArray Int PtrSV
+    _ = sqrAns3 :: StorableArray Int PtrSV
+  return ()
