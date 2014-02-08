@@ -13,6 +13,11 @@ import Perl.MonadGlue
 class FromSV a where
   fromSV :: MonadIO m => PtrSV -> PerlT s m a
 
+instance FromSV PtrSV where
+  fromSV sv = do
+    incRefCnt sv
+    return sv
+
 instance FromSV Int where
   fromSV sv = do
     int <- svToInt sv
