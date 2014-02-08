@@ -1,5 +1,6 @@
 module Main where
 
+import Perl.Constant
 import Perl.Monad
 import Perl.MonadGlue
 import Foreign.C.String
@@ -65,5 +66,5 @@ perl = runPerlT $ do
   dieStr <- liftIO $ newCString "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr
   emptyArgs <- liftIO $ unsafeForeignPtrToStorableArray fptrNull (1, 0)
-  callName dieStr 8 emptyArgs
+  callName dieStr G_EVAL emptyArgs
   liftIO $ free dieStr
