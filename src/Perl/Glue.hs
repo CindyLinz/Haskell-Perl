@@ -21,10 +21,10 @@ foreign import ccall unsafe
 ------
 -- init / exit
 
-foreign import ccall unsafe
+foreign import ccall safe
   init_perl :: IO PtrPerl
 
-foreign import ccall unsafe
+foreign import ccall safe
   exit_perl :: PtrPerl -> IO ()
 
 ------
