@@ -30,11 +30,7 @@ main = runPerlT $ do
 
   cv <- sub $ \a b c -> do
     return () :: PerlSubT s IO ()
-    let
-      _ = a :: Double
-      _ = b :: Double
-      _ = c :: Double
-    let det = b * b - 4 * a * c
+    let det = b * b - 4 * a * c :: Double
     if det == 0
       then do
         liftIO $ putStrLn $ "1 ans = " ++ show (- b / (2 * a))
@@ -47,8 +43,8 @@ main = runPerlT $ do
           liftIO $ putStrLn $ "2 ans"
           return [ToSVObj ( (-b + sqrt det) / (2 * a) ), ToSVObj ( (-b - sqrt det) / (2 * a) )]
   shapeCall $ call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
-  shapeCall $ call "call" cv (1 :: Double) (3 :: Double) (2 :: Double)
-  shapeCall $ call "call" cv (1 :: Double) (1 :: Double) (1 :: Double)
+  shapeCall $ call "call" cv (1 :: Double) (3 :: Int) "2"
+  shapeCall $ call "call" cv (1 :: Int) (1 :: Double) (1 :: Int)
 --  sqrAns <- call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
 --  sqrAns2 <- call "call" cv (1 :: Double) (3 :: Double) (2 :: Double)
 --  sqrAns3 <- call "call" cv (1 :: Double) (1 :: Double) (1 :: Double)
