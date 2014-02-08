@@ -28,7 +28,7 @@ incRefCnt = liftIO . svREFCNT_inc_void_NN
 
 decRefCnt :: MonadIO m => PtrSV -> PerlT s m ()
 decRefCnt sv = PerlT $ \perl frames -> do
-  liftIO (perl_sv_free perl sv)
+  liftIO (svREFCNT_dec perl sv)
   return (frames, ())
 
 ------
