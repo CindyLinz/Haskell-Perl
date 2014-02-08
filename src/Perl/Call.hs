@@ -32,10 +32,10 @@ import Perl.ToSV
 --call :: (MonadIO m, CallType m r) => String -> r
 --call name = collect id name
 
-class MonadIO m => CallType m r | r -> m where
-  collect :: (forall s. [PtrSV] -> PerlT s m [PtrSV]) -> String -> r
+class CallType r where
+  collect :: (forall s m. MonadIO m => [PtrSV] -> PerlT s m [PtrSV]) -> String -> r
 
-instance MonadIO m => CallType m (PerlT s m (StorableArray Int PtrSV)) where
+instance MonadIO m => CallType (PerlT s m (StorableArray Int PtrSV)) where
   collect args name = scope $ do
     argList <- args []
     res <- PerlT $ \perl frames -> liftIO $ withCString name $ \cName -> do
@@ -43,12 +43,16 @@ instance MonadIO m => CallType m (PerlT s m (StorableArray Int PtrSV)) where
       unPerlT (G.callName cName 0 argArray) perl frames
     return res
 
-instance (ToSV svObj, MonadIO m, CallType m r) => CallType m (svObj -> r) where
+instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
   collect args name svObj = collect
     ( \later -> do
       sv <- toSV svObj
       args $ sv : later
     ) name
 
-call :: (MonadIO m, CallType m r) => String -> r
+call :: CallType r => String -> r
 call name = collect return name
+
+shapeCall :: MonadIO m => PerlT s m (StorableArray Int PtrSV) -> PerlT s m (StorableArray Int PtrSV)
+shapeCall = id
+

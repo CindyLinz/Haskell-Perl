@@ -46,11 +46,14 @@ main = runPerlT $ do
         else do
           liftIO $ putStrLn $ "2 ans"
           return [ToSVObj ( (-b + sqrt det) / (2 * a) ), ToSVObj ( (-b - sqrt det) / (2 * a) )]
-  sqrAns <- call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
-  sqrAns2 <- call "call" cv (1 :: Double) (3 :: Double) (2 :: Double)
-  sqrAns3 <- call "call" cv (1 :: Double) (1 :: Double) (1 :: Double)
-  let
-    _ = sqrAns :: StorableArray Int PtrSV
-    _ = sqrAns2 :: StorableArray Int PtrSV
-    _ = sqrAns3 :: StorableArray Int PtrSV
+  shapeCall $ call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
+  shapeCall $ call "call" cv (1 :: Double) (3 :: Double) (2 :: Double)
+  shapeCall $ call "call" cv (1 :: Double) (1 :: Double) (1 :: Double)
+--  sqrAns <- call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
+--  sqrAns2 <- call "call" cv (1 :: Double) (3 :: Double) (2 :: Double)
+--  sqrAns3 <- call "call" cv (1 :: Double) (1 :: Double) (1 :: Double)
+--  let
+--    _ = sqrAns :: StorableArray Int PtrSV
+--    _ = sqrAns2 :: StorableArray Int PtrSV
+--    _ = sqrAns3 :: StorableArray Int PtrSV
   return ()

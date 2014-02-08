@@ -157,7 +157,7 @@ callName name flag args = PerlT $ \perl frames -> liftIO . withStorableArray arg
 ------
 -- sub
 
-getSubArgs :: (Ix i, Num i, MonadIO m) => PerlSubT s m (StorableArray i PtrSV)
+getSubArgs :: MonadIO m => PerlSubT s m (StorableArray Int PtrSV)
 getSubArgs = PerlSubT $ \perl cv -> liftIO $ do
   items <- get_sub_arg_num perl
   args <- newArray_ (1, fromIntegral items)
@@ -166,7 +166,7 @@ getSubArgs = PerlSubT $ \perl cv -> liftIO $ do
   return args
 
 -- must be the last step in the sub that modify the perl stack
-setSubReturns :: (Ix i, Integral i, MonadIO m) => StorableArray i PtrSV -> PerlSubT s m ()
+setSubReturns :: MonadIO m => StorableArray Int PtrSV -> PerlSubT s m ()
 setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
   (a, b) <- getBounds returns
   withStorableArray returns $ \ptrReturns -> do
