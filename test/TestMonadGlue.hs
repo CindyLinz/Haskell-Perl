@@ -66,5 +66,5 @@ perl = runPerlT $ do
   dieStr <- liftIO $ newCString "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr
   emptyArgs <- liftIO $ unsafeForeignPtrToStorableArray fptrNull (1, 0)
-  callName dieStr G_EVAL emptyArgs
+  callName dieStr const_G_EVAL emptyArgs
   liftIO $ free dieStr

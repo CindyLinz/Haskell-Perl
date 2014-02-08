@@ -1,4 +1,5 @@
-module Perl.Contant
+module Perl.Constant
   where
 
-G_EVAL = 8
+const_G_EVAL :: Integral n => n
+const_G_EVAL = 8
