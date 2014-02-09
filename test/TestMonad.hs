@@ -30,20 +30,19 @@ main = runPerlT $ do
 
   cv <- sub $ \a b c extra -> subDo $ do
     let
-      extraRet = ToSVObj $ " extra len = " ++ show (length (extra :: [PtrSV]))
-      --extraRet = ToSVObj ""
+      extraRet = " extra len = " ++ show (length (extra :: [PtrSV]))
       det = b * b - 4 * a * c :: Double
     if det == 0
       then do
         liftIO $ putStrLn $ "1 ans = " ++ show (- b / (2 * a))
-        return [ToSVObj (- b / (2 * a)), extraRet]
+        retSub (-b / (2 * a), extraRet)
       else if det < 0
         then do
           liftIO $ putStrLn $ "0 ans"
-          return [ToSVObj "No real roots", extraRet]
+          retSub ("No real roots", extraRet)
         else do
           liftIO $ putStrLn $ "2 ans"
-          return [ToSVObj ( (-b + sqrt det) / (2 * a) ), ToSVObj ( (-b - sqrt det) / (2 * a) ), extraRet]
+          retSub ((-b + sqrt det) / (2 * a), (-b - sqrt det) / (2 * a), extraRet)
   noRet $ call "call" cv (1 :: Double) (2 :: Double) (1 :: Double) "a"
   noRet $ call "call" cv (1 :: Double) (3 :: Int) "2" "b" "c"
   noRet $ call "call" cv (1 :: Int) (1 :: Double) (1 :: Int)

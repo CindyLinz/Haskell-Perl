@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables, Rank2Types, FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables, Rank2Types, FlexibleContexts, ExistentialQuantification #-}
 module Perl.Sub
   where
 
@@ -15,6 +15,10 @@ import qualified Perl.MonadGlue as G
 class SubReturn a where
   returnSub :: a -> PerlSubT s IO ()
 
+data SubReturnObj = forall a. SubReturn a => SubReturnObj a
+retSub :: (Monad m, SubReturn a) => a -> PerlSubT s m SubReturnObj
+retSub = return . SubReturnObj
+
 instance SubReturn [ToSVObj] where
   returnSub retList = do
     retSVList <- liftPerl $ forM retList (\(ToSVObj a) -> toSVMortal a)
@@ -22,6 +26,20 @@ instance SubReturn [ToSVObj] where
     let len = length retSVList
     rets <- liftIO $ newListArray (1,len) retSVList
     G.setSubReturns rets
+
+instance SubReturn SubReturnObj where returnSub (SubReturnObj a) = returnSub a
+instance SubReturn () where returnSub _ = returnSub ([] :: [ToSVObj])
+instance SubReturn ToSVObj where returnSub a = returnSub [a]
+instance SubReturn PtrSV where returnSub a = returnSub [ToSVObj a]
+instance SubReturn Int where returnSub a = returnSub [ToSVObj a]
+instance SubReturn Double where returnSub a = returnSub [ToSVObj a]
+instance SubReturn String where returnSub a = returnSub [ToSVObj a]
+instance (ToSV a, ToSV b) => SubReturn (a, b) where returnSub (a, b) = returnSub [ToSVObj a, ToSVObj b]
+instance (ToSV a, ToSV b, ToSV c) => SubReturn (a, b, c) where returnSub (a, b, c) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c]
+instance (ToSV a, ToSV b, ToSV c, ToSV d) => SubReturn (a, b, c, d) where returnSub (a, b, c, d) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d]
+instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e) => SubReturn (a, b, c, d, e) where returnSub (a, b, c, d, e) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e]
+instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f) => SubReturn (a, b, c, d, e, f) where returnSub (a, b, c, d, e, f) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f]
+instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f, ToSV g) => SubReturn (a, b, c, d, e, f, g) where returnSub (a, b, c, d, e, f, g) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
 
 class Subable a where
   subBody :: [PtrSV] -> a -> PerlSubT s IO ()
