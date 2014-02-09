@@ -28,20 +28,24 @@ main = runPerlT $ do
   sinRetNum <- fromSV sinRet0
   liftIO $ putStrLn $ show (sinRetNum :: Double)
 
-  cv <- sub $ \a b c -> subDo $ do
-    let det = b * b - 4 * a * c :: Double
+  cv <- sub $ \a b c extra -> subDo $ do
+    let
+      extraRet = ToSVObj $ " extra len = " ++ show (length (extra :: [PtrSV]))
+      --extraRet = ToSVObj ""
+      det = b * b - 4 * a * c :: Double
     if det == 0
       then do
         liftIO $ putStrLn $ "1 ans = " ++ show (- b / (2 * a))
-        return [ToSVObj (- b / (2 * a)) ]
+        return [ToSVObj (- b / (2 * a)), extraRet]
       else if det < 0
         then do
           liftIO $ putStrLn $ "0 ans"
-          return [ToSVObj "No real roots"]
+          return [ToSVObj "No real roots", extraRet]
         else do
           liftIO $ putStrLn $ "2 ans"
-          return [ToSVObj ( (-b + sqrt det) / (2 * a) ), ToSVObj ( (-b - sqrt det) / (2 * a) )]
-  noRet $ call "call" cv (1 :: Double) (2 :: Double) (1 :: Double)
-  noRet $ call "call" cv (1 :: Double) (3 :: Int) "2"
+          return [ToSVObj ( (-b + sqrt det) / (2 * a) ), ToSVObj ( (-b - sqrt det) / (2 * a) ), extraRet]
+  noRet $ call "call" cv (1 :: Double) (2 :: Double) (1 :: Double) "a"
+  noRet $ call "call" cv (1 :: Double) (3 :: Int) "2" "b" "c"
   noRet $ call "call" cv (1 :: Int) (1 :: Double) (1 :: Int)
+  noRet $ call "call" cv (1 :: Int)
   return ()
