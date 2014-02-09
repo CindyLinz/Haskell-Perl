@@ -5,6 +5,7 @@ module Perl.Call
 import Control.Monad
 import Control.Monad.IO.Class
 import Data.Array.Storable
+import Foreign.C.Types
 import Foreign.C.String
 
 import Perl.Type
@@ -12,6 +13,7 @@ import Perl.Constant
 import Perl.Monad
 import qualified Perl.MonadGlue as G
 import Perl.ToSV
+import Perl.FromSV
 
 --class ToArgs a where
 --  toArgs :: a -> StorableArray Int PtrSV
@@ -36,13 +38,41 @@ import Perl.ToSV
 class CallType r where
   collect :: (forall s m. MonadIO m => [PtrSV] -> PerlT s m [PtrSV]) -> String -> r
 
+callCommon :: MonadIO m => CInt -> (forall s1 m1. MonadIO m1 => [PtrSV] -> PerlT s1 m1 [PtrSV]) -> String -> PerlT s m (StorableArray Int PtrSV)
+callCommon flag args name = scope $ do
+  argList <- args []
+  res <- PerlT $ \perl frames -> liftIO $ withCString name $ \cName -> do
+    argArray <- newListArray (1, length argList) argList
+    unPerlT (G.callName cName flag argArray) perl frames
+  return res
+
+callScalarCommon :: (FromSV a, MonadIO m) => (forall s1 m1. MonadIO m1 => [PtrSV] -> PerlT s1 m1 [PtrSV]) -> String -> PerlT s m a
+callScalarCommon args name = do
+  resArray <- callCommon const_G_SCALAR args name
+  resSV <- liftIO $ readArray resArray 1
+  fromSV resSV
+
+callListCommon :: (FromSV a, MonadIO m) => (forall s1 m1. MonadIO m1 => [PtrSV] -> PerlT s1 m1 [PtrSV]) -> String -> PerlT s m [a]
+callListCommon args name = do
+  resArray <- callCommon const_G_ARRAY args name
+  resSVList <- liftIO $ getElems resArray
+  mapM fromSV resSVList
+
 instance MonadIO m => CallType (PerlT s m (StorableArray Int PtrSV)) where
-  collect args name = scope $ do
-    argList <- args []
-    res <- PerlT $ \perl frames -> liftIO $ withCString name $ \cName -> do
-      argArray <- newListArray (1, length argList) argList
-      unPerlT (G.callName cName const_G_ARRAY argArray) perl frames
-    return res
+  collect = callCommon const_G_ARRAY
+
+instance MonadIO m => CallType (PerlT s m ()) where
+  collect args name = callCommon const_G_VOID args name >> return ()
+
+instance MonadIO m => CallType (PerlT s m PtrSV) where collect = callScalarCommon
+instance MonadIO m => CallType (PerlT s m Int) where collect = callScalarCommon
+instance MonadIO m => CallType (PerlT s m Double) where collect = callScalarCommon
+instance MonadIO m => CallType (PerlT s m String) where collect = callScalarCommon
+
+instance MonadIO m => CallType (PerlT s m [PtrSV]) where collect = callListCommon
+instance MonadIO m => CallType (PerlT s m [Int]) where collect = callListCommon
+instance MonadIO m => CallType (PerlT s m [Double]) where collect = callListCommon
+instance MonadIO m => CallType (PerlT s m [String]) where collect = callListCommon
 
 instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
   collect args name svObj = collect
@@ -54,6 +84,6 @@ instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
 call :: CallType r => String -> r
 call name = collect return name
 
-noRet :: MonadIO m => PerlT s m (StorableArray Int PtrSV) -> PerlT s m ()
-noRet x = x >> return ()
+noRet :: MonadIO m => PerlT s m () -> PerlT s m ()
+noRet = id
 

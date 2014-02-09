@@ -133,11 +133,18 @@ I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* 
     }
     {
         I32 count = call_pv(sub_name, flags);
-        SPAGAIN;
         if( count > 0 ){
             SV **rets = *outv = (SV**) malloc(sizeof(SV*) * count);
+            SPAGAIN;
             { I32 i; for(i=count-1; i>=0; --i){
+#ifdef TRACK_PERL_GLUE
+                double n;
+#endif
                 rets[i] = POPs;
+#ifdef TRACK_PERL_GLUE
+                n = SvNVx(rets[i]);
+                printf("prepare return %d NV=%f\n", i, n);
+#endif
             } }
             PUTBACK;
         }
