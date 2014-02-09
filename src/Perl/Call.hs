@@ -8,6 +8,7 @@ import Data.Array.Storable
 import Foreign.C.String
 
 import Perl.Type
+import Perl.Constant
 import Perl.Monad
 import qualified Perl.MonadGlue as G
 import Perl.ToSV
@@ -40,7 +41,7 @@ instance MonadIO m => CallType (PerlT s m (StorableArray Int PtrSV)) where
     argList <- args []
     res <- PerlT $ \perl frames -> liftIO $ withCString name $ \cName -> do
       argArray <- newListArray (1, length argList) argList
-      unPerlT (G.callName cName 0 argArray) perl frames
+      unPerlT (G.callName cName const_G_ARRAY argArray) perl frames
     return res
 
 instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
