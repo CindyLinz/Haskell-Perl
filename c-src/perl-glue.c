@@ -133,6 +133,7 @@ I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* 
     }
     {
         I32 count = call_pv(sub_name, flags);
+        SPAGAIN;
         if( count > 0 ){
             SV **rets = *outv = (SV**) malloc(sizeof(SV*) * count);
             { I32 i; for(i=count-1; i>=0; --i){
