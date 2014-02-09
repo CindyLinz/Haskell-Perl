@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes, FlexibleInstances, ExistentialQuantification, MultiParamTypeClasses, FunctionalDependencies, UndecidableInstances #-}
+{-# LANGUAGE Rank2Types, FlexibleInstances #-}
 module Perl.Call
   where
 
