@@ -36,4 +36,12 @@ instance ToSV String where
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (newStrSVMortal cstr (fromIntegral len)) perl frames
 
+class ToSVs a where
+  toSVs :: MonadIO m => a -> PerlT s m [PtrSV]
+
+instance ToSVs [PtrSV] where toSVs = mapM toSV
+instance ToSVs [Int] where toSVs = mapM toSV
+instance ToSVs [Double] where toSVs = mapM toSV
+instance ToSVs [String] where toSVs = mapM toSV
+
 data ToSVObj = forall a. ToSV a => ToSVObj a
