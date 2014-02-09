@@ -67,6 +67,7 @@ executable test-monad
                      , src
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
+  --ghc-options:         -prof -fprof-auto
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
