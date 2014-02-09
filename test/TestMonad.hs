@@ -54,7 +54,7 @@ main = runPerlT $ do
 
   defSub "my_test_add3" $ \a b c -> do
     liftIO $ putStrLn $ "a = " ++ show a ++ ", b = " ++ show b ++ ", c = " ++ show c
-    retSub [ToSVObj (a + b + c :: Double)]
+    retSub (a + b + c :: Double)
 
   my_test_add3_res <- call "call" "my_test_add3" "1" (2 :: Int) (3 :: Double)
   add3ResList <- liftIO $ getElems (my_test_add3_res :: StorableArray Int PtrSV)
