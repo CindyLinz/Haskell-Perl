@@ -54,6 +54,10 @@ liftScope (PerlT act) = PerlT $ \perl (headFrame : otherFrames) -> do
   (otherFrames', a) <- act perl otherFrames
   return (headFrame : otherFrames', a)
 
+instance Functor m => Functor (PerlT s m) where
+  fmap f k = PerlT $ \perl scopeFrames ->
+    fmap (\(scopeFrames', a) -> (scopeFrames', f a)) (unPerlT k perl scopeFrames)
+
 instance Monad m => Monad (PerlT s m) where
   return a = PerlT $ \perl scopeFrames -> return (scopeFrames, a)
   f >>= k = PerlT $ \perl scopeFrames -> do
@@ -86,6 +90,10 @@ wrapSub fun = PerlT $ \perl (frame:frames) -> do
 makeSub :: MonadIO m => (forall s. PerlSubT s IO ()) -> PerlT s m PtrSV
 makeSub def = wrapSub $ \perl selfCV ->
   unPerlSubT def perl selfCV
+
+instance Functor m => Functor (PerlSubT s m) where
+  fmap f k = PerlSubT $ \perl cv ->
+    fmap f (unPerlSubT k perl cv)
 
 instance Monad m => Monad (PerlSubT s m) where
   return a = PerlSubT $ \perl cv -> return a
