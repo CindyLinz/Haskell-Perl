@@ -4,6 +4,7 @@ module Perl.Sub
 
 import Control.Monad
 import Control.Monad.IO.Class
+import Foreign.C.String
 import Data.Array.MArray
 
 import Perl.Type
@@ -70,11 +71,19 @@ instance Subable others => Subable (Int -> others) where subBody = currySub
 instance Subable others => Subable (Double -> others) where subBody = currySub
 instance Subable others => Subable (String -> others) where subBody = currySub
 
-sub :: (MonadIO m, Subable a) => a -> PerlT s m PtrSV
-sub body = makeSub $ do
+subCommon :: Subable a => a -> PerlSubT s IO ()
+subCommon body = do
   args <- G.getSubArgs
   argsList <- liftIO $ getElems args
   subBody argsList body
 
+sub :: (MonadIO m, Subable a) => a -> PerlT s m PtrSV
+sub body = makeSub $ subCommon body
+
 subDo :: SubReturn ret => PerlSubT s IO ret -> PerlSubT s IO ret
 subDo = id
+
+defSub :: (MonadIO m, Subable a) => String -> a -> PerlT s m ()
+defSub name body = PerlT $ \perl frames -> do
+  liftIO $ withCString name $ \cName ->
+    unPerlT (defineSub cName $ subCommon body) perl frames

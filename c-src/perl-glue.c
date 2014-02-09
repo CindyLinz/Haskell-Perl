@@ -173,6 +173,14 @@ SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
     return cv_ref;
 }
 
+void reg_sub(pTHX_ const char *name, XSUBADDR_t subaddr){
+    CV *cv = Perl_newXS(aTHX_ name, subaddr, "Haskell");
+    sv_magicext((SV*)cv, (SV*)cv, PERL_MAGIC_ext, &haskell_cv_vtbl, 0, 0);
+#ifdef TRACK_PERL_GLUE
+    printf("reg cv %s %p %p\n", name, (void*)cv, (void*)subaddr);
+#endif
+}
+
 I32 get_sub_arg_num(pTHX){
     return (I32)(PL_stack_sp - PL_stack_base - TOPMARK);
 }

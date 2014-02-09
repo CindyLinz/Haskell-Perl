@@ -14,7 +14,11 @@ import Control.Monad.IO.Class
 import Data.Array.Storable
 
 main = runPerlT $ do
-  res <- eval "sub call { my $func = shift; @res = $func->(@_); local $\" = ','; print qq( res: @res$/) } print 'Hi ', rand 10, $/; use Scalar::Util qw(dualvar); dualvar 3 + 4.5, 'Good' "
+  res <- eval $
+    "sub call { my $func = shift; @res = $func->(@_); local $\" = ','; print qq( res: @res$/); return @res }" ++
+    "print 'Hi ', rand 10, $/;" ++
+    "use Scalar::Util qw(dualvar);" ++
+    "dualvar 3 + 4.5, 'Good'"
   n <- fromSV res
   d <- fromSV res
   s <- fromSV res
@@ -47,4 +51,16 @@ main = runPerlT $ do
   noRet $ call "call" cv (1 :: Double) (3 :: Int) "2" "b" "c"
   noRet $ call "call" cv (1 :: Int) (1 :: Double) (1 :: Int)
   noRet $ call "call" cv (1 :: Int)
+
+  defSub "my_test_add3" $ \a b c -> do
+    liftIO $ putStrLn $ "a = " ++ show a ++ ", b = " ++ show b ++ ", c = " ++ show c
+    retSub [ToSVObj (a + b + c :: Double)]
+
+  my_test_add3_res <- call "call" "my_test_add3" "1" (2 :: Int) (3 :: Double)
+  add3ResList <- liftIO $ getElems (my_test_add3_res :: StorableArray Int PtrSV)
+  add3ResDoubleList <- mapM fromSV add3ResList
+  liftIO $ putStrLn $ "my_test_add3 -> " ++ show (add3ResDoubleList :: [Int])
+
+  noRet $ call "call" "my_test_add3" "3" (2 :: Int) (1 :: Double)
+
   return ()

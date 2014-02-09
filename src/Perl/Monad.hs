@@ -82,14 +82,22 @@ liftPerl act = PerlSubT $ \perl _ -> do
   return a
 
 wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m PtrSV
-wrapSub fun = PerlT $ \perl (frame:frames) -> do
-  funPtr <- liftIO $ wrap_sub_wrapper fun
-  cv <- liftIO $ wrap_sub perl funPtr
+wrapSub fun = PerlT $ \perl (frame:frames) -> liftIO $ do
+  funPtr <- wrap_sub_wrapper fun
+  cv <- wrap_sub perl funPtr
   return ((castPtr cv:frame):frames, cv)
 
 makeSub :: MonadIO m => (forall s. PerlSubT s IO ()) -> PerlT s m PtrSV
-makeSub def = wrapSub $ \perl selfCV ->
-  unPerlSubT def perl selfCV
+makeSub def = wrapSub $ unPerlSubT def
+
+regSub :: MonadIO m => CString -> (PtrPerl -> PtrCV -> IO ()) -> PerlT s m ()
+regSub name fun = PerlT $ \perl frames -> liftIO $ do
+  funPtr <- wrap_sub_wrapper fun
+  reg_sub perl name funPtr
+  return (frames, ())
+
+defineSub :: MonadIO m => CString -> (forall s. PerlSubT s IO ()) -> PerlT s m ()
+defineSub name def = regSub name $ unPerlSubT def
 
 instance Functor m => Functor (PerlSubT s m) where
   fmap f k = PerlSubT $ \perl cv ->

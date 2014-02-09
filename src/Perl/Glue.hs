@@ -129,6 +129,9 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   wrap_sub :: PtrPerl -> FunPtr (PtrPerl -> PtrCV -> IO ()) -> IO PtrSV
 
+foreign import ccall safe
+  reg_sub :: PtrPerl -> CString -> FunPtr (PtrPerl -> PtrCV -> IO ()) -> IO ()
+
 foreign import ccall unsafe
   get_sub_arg_num :: PtrPerl -> IO CInt
 
