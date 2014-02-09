@@ -14,6 +14,10 @@ class ToSV a where
   toSV :: MonadIO m => a -> PerlT s m PtrSV
   toSVMortal :: MonadIO m => a -> PerlT s m PtrSV
 
+instance ToSV ToSVObj where
+  toSV (ToSVObj a) = toSV a
+  toSVMortal (ToSVObj a) = toSVMortal a
+
 instance ToSV PtrSV where
   toSV sv = do
     incRefCnt sv
