@@ -45,9 +45,11 @@ instance (FromSV a, Subable others) => Subable (a -> others) where
         return (a', as)
     subBody others (lambda a)
 
---makeSub :: MonadIO m => (forall m1. MonadIO m1 => PerlSubT s m1 ()) -> PerlT s m PtrSV
 sub :: (MonadIO m, Subable a) => a -> PerlT s m PtrSV
 sub body = makeSub $ do
   args <- G.getSubArgs
   argsList <- liftIO $ getElems args
   subBody argsList body
+
+subDo :: SubReturn ret => PerlSubT s IO ret -> PerlSubT s IO ret
+subDo = id

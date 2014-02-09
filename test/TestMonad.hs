@@ -28,8 +28,7 @@ main = runPerlT $ do
   sinRetNum <- fromSV sinRet0
   liftIO $ putStrLn $ show (sinRetNum :: Double)
 
-  cv <- sub $ \a b c -> do
-    return () :: PerlSubT s IO ()
+  cv <- sub $ \a b c -> subDo $ do
     let det = b * b - 4 * a * c :: Double
     if det == 0
       then do
