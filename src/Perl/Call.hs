@@ -53,6 +53,6 @@ instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
 call :: CallType r => String -> r
 call name = collect return name
 
-noRet :: (Functor m, MonadIO m) => PerlT s m (StorableArray Int PtrSV) -> PerlT s m ()
-noRet x = fmap (undefined $!) x >> return ()
+noRet :: MonadIO m => PerlT s m (StorableArray Int PtrSV) -> PerlT s m ()
+noRet x = x >> return ()
 
