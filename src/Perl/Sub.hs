@@ -16,7 +16,7 @@ class SubReturn a where
   returnSub :: a -> PerlSubT s IO ()
 
 data SubReturnObj = forall a. SubReturn a => SubReturnObj a
-retSub :: (Monad m, SubReturn a) => a -> PerlSubT s m SubReturnObj
+retSub :: SubReturn a => a -> PerlSubT s IO SubReturnObj
 retSub = return . SubReturnObj
 
 instance SubReturn [ToSVObj] where

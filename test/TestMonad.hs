@@ -28,7 +28,7 @@ main = runPerlT $ do
   sinRetNum <- fromSV sinRet0
   liftIO $ putStrLn $ show (sinRetNum :: Double)
 
-  cv <- sub $ \a b c extra -> subDo $ do
+  cv <- sub $ \a b c extra -> {- subDo $ -} do
     let
       extraRet = " extra len = " ++ show (length (extra :: [PtrSV]))
       det = b * b - 4 * a * c :: Double
