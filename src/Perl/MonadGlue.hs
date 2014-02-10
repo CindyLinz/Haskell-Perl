@@ -113,9 +113,9 @@ setSVNum sv a = PerlT $ \perl frames -> do
   liftIO $ perl_sv_setnv_mg perl sv a
   return (frames, ())
 
-setSVStr :: MonadIO m => PtrSV -> CStringLen -> PerlT s m ()
-setSVStr sv (ptrStr, len) = PerlT $ \perl frames -> do
-  liftIO $ perl_sv_setpvn_mg perl sv ptrStr (fromIntegral len)
+setSVStr :: MonadIO m => PtrSV -> Ptr CChar -> StrLen -> PerlT s m ()
+setSVStr sv ptrStr len = PerlT $ \perl frames -> do
+  liftIO $ perl_sv_setpvn_mg perl sv ptrStr len
   return (frames, ())
 
 setSVSV :: MonadIO m => PtrSV -> PtrSV -> PerlT s m ()

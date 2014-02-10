@@ -13,24 +13,29 @@ import Perl.MonadGlue
 class ToSV a where
   toSV :: MonadIO m => a -> PerlT s m PtrSV
   toSVMortal :: MonadIO m => a -> PerlT s m PtrSV
+  setSV :: MonadIO m => PtrSV -> a -> PerlT s m ()
 
 instance ToSV ToSVObj where
   toSV (ToSVObj a) = toSV a
   toSVMortal (ToSVObj a) = toSVMortal a
+  setSV sv (ToSVObj a) = setSV sv a
 
 instance ToSV PtrSV where
   toSV sv = do
     incRefCnt sv
     return sv
   toSVMortal = newSVSVMortal
+  setSV = setSVSV
 
 instance ToSV Int where
   toSV n = newIntSV (fromIntegral n)
   toSVMortal n = newIntSVMortal (fromIntegral n)
+  setSV sv = setSVInt sv . fromIntegral
 
 instance ToSV Double where
   toSV d = newNumSV (CDouble d)
   toSVMortal d = newNumSVMortal (CDouble d)
+  setSV sv = setSVNum sv . CDouble
 
 instance ToSV String where
   toSV str = PerlT $ \perl frames ->
@@ -39,6 +44,9 @@ instance ToSV String where
   toSVMortal str = PerlT $ \perl frames ->
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (newStrSVMortal cstr (fromIntegral len)) perl frames
+  setSV sv str = PerlT $ \perl frames ->
+    liftIO . withCStringLen str $ \(cstr, len) ->
+      unPerlT (setSVStr sv cstr (fromIntegral len)) perl frames
 
 class ToSVs a where
   toSVs :: MonadIO m => a -> PerlT s m [PtrSV]
