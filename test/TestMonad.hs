@@ -8,6 +8,7 @@ import Perl.Sub
 import Perl.Type
 import Perl.Ref
 import Perl.AsSV
+import Perl.AsRef
 import Control.Monad.IO.Class
 
 main = runPerlT $ do
@@ -27,7 +28,7 @@ main = runPerlT $ do
 
   cv <- sub $ \a b c extra -> {- subDo $ -} do
     let
-      extraRet = " extra len = " ++ show (length (extra :: [PtrSV]))
+      extraRet = " extra len = " ++ show (length (extra :: [SV]))
       det = b * b - 4 * a * c :: Double
     if det == 0
       then do

@@ -11,22 +11,22 @@ import Perl.Monad
 import Perl.MonadGlue
 import Perl.AsSV
 
-(.=) :: (MonadIO m, ToSV a) => PtrSV -> a -> PerlT s m PtrSV
+(.=) :: (MonadIO m, ToSV a) => SV -> a -> PerlT s m SV
 sv .= a = do
   setSV sv a
   return sv
 
 class ToSV a where
-  toSV :: MonadIO m => a -> PerlT s m PtrSV
-  toSVMortal :: MonadIO m => a -> PerlT s m PtrSV
-  setSV :: MonadIO m => PtrSV -> a -> PerlT s m ()
+  toSV :: MonadIO m => a -> PerlT s m SV
+  toSVMortal :: MonadIO m => a -> PerlT s m SV
+  setSV :: MonadIO m => SV -> a -> PerlT s m ()
 
 instance ToSV ToSVObj where
   toSV (ToSVObj a) = toSV a
   toSVMortal (ToSVObj a) = toSVMortal a
   setSV sv (ToSVObj a) = setSV sv a
 
-instance ToSV PtrSV where
+instance ToSV SV where
   toSV sv = do
     incRefCnt sv
     return sv
@@ -54,13 +54,13 @@ instance ToSV String where
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (setSVStr sv cstr (fromIntegral len)) perl frames
 
-asToSV :: (AsSV a, MonadIO m) => a -> PerlT s m PtrSV
+asToSV :: (AsSV a, MonadIO m) => a -> PerlT s m SV
 asToSV a = asSV a >>= toSV
 
-asToSVMortal :: (AsSV a, MonadIO m) => a -> PerlT s m PtrSV
+asToSVMortal :: (AsSV a, MonadIO m) => a -> PerlT s m SV
 asToSVMortal a = asSV a >>= toSVMortal
 
-asSetSV :: (AsSV a, MonadIO m) => PtrSV -> a -> PerlT s m ()
+asSetSV :: (AsSV a, MonadIO m) => SV -> a -> PerlT s m ()
 asSetSV sv a = asSV a >>= setSV sv
 
 instance ToSV RefSV where
@@ -81,9 +81,9 @@ instance ToSV RefCV where
   setSV = asSetSV
 
 class ToSVs a where
-  toSVs :: MonadIO m => a -> PerlT s m [PtrSV]
+  toSVs :: MonadIO m => a -> PerlT s m [SV]
 
-instance ToSVs [PtrSV] where toSVs = mapM toSV
+instance ToSVs [SV] where toSVs = mapM toSV
 instance ToSVs [Int] where toSVs = mapM toSV
 instance ToSVs [Double] where toSVs = mapM toSV
 instance ToSVs [String] where toSVs = mapM toSV

@@ -9,7 +9,7 @@ import Perl.Monad
 import qualified Perl.MonadGlue as G
 
 class PerlEvalable m a where
-  eval :: a -> PerlT s m PtrSV
+  eval :: a -> PerlT s m SV
 
 instance MonadIO m => PerlEvalable m CString where
   eval = G.eval

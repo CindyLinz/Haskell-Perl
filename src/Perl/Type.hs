@@ -13,26 +13,26 @@ type NV = CDouble
 data PerlInterpreter
 type PtrPerl = Ptr PerlInterpreter
 
-data SV
-type PtrSV = Ptr SV
+data SV_
+type SV = Ptr SV_
 
-data AV
-type PtrAV = Ptr AV
+data AV_
+type AV = Ptr AV_
 
-data HV
-type PtrHV = Ptr HV
+data HV_
+type HV = Ptr HV_
 
-data CV
-type PtrCV = Ptr CV
+data CV_
+type CV = Ptr CV_
 
-data RSV
-type RefSV = Ptr RSV
+data RSV_
+type RefSV = Ptr RSV_
 
-data RAV
-type RefAV = Ptr RAV
+data RAV_
+type RefAV = Ptr RAV_
 
-data RHV
-type RefHV = Ptr RHV
+data RHV_
+type RefHV = Ptr RHV_
 
-data RCV
-type RefCV = Ptr RCV
+data RCV_
+type RefCV = Ptr RCV_

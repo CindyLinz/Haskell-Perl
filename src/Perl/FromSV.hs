@@ -12,9 +12,9 @@ import Perl.MonadGlue
 
 class FromSV a where
   fromSVNon :: MonadIO m => PerlT s m a
-  fromSV :: MonadIO m => PtrSV -> PerlT s m a
+  fromSV :: MonadIO m => SV -> PerlT s m a
 
-instance FromSV PtrSV where
+instance FromSV SV where
   fromSVNon = newSV
   fromSV sv = do
     incRefCnt sv
@@ -39,9 +39,9 @@ instance FromSV String where
     liftIO $ peekCStringLen cStrLen
 
 class FromSVs a where
-  fromSVs :: MonadIO m => [PtrSV] -> PerlT s m a
+  fromSVs :: MonadIO m => [SV] -> PerlT s m a
 
-instance FromSVs [PtrSV] where fromSVs = mapM fromSV
+instance FromSVs [SV] where fromSVs = mapM fromSV
 instance FromSVs [Int] where fromSVs = mapM fromSV
 instance FromSVs [Double] where fromSVs = mapM fromSV
 instance FromSVs [String] where fromSVs = mapM fromSV

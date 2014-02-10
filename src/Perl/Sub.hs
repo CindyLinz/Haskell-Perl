@@ -31,7 +31,7 @@ instance SubReturn [ToSVObj] where
 instance SubReturn SubReturnObj where returnSub (SubReturnObj a) = returnSub a
 instance SubReturn () where returnSub _ = returnSub ([] :: [ToSVObj])
 instance SubReturn ToSVObj where returnSub a = returnSub [a]
-instance SubReturn PtrSV where returnSub a = returnSub [ToSVObj a]
+instance SubReturn SV where returnSub a = returnSub [ToSVObj a]
 instance SubReturn Int where returnSub a = returnSub [ToSVObj a]
 instance SubReturn Double where returnSub a = returnSub [ToSVObj a]
 instance SubReturn String where returnSub a = returnSub [ToSVObj a]
@@ -43,7 +43,7 @@ instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f) => SubReturn (a, b, c,
 instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f, ToSV g) => SubReturn (a, b, c, d, e, f, g) where returnSub (a, b, c, d, e, f, g) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
 
 class Subable a where
-  subBody :: [PtrSV] -> a -> PerlSubT s IO ()
+  subBody :: [SV] -> a -> PerlSubT s IO ()
 
 instance SubReturn ret => Subable (PerlSubT s IO ret) where
   subBody _ body = PerlSubT $ \perl cv -> do
@@ -55,7 +55,7 @@ instance (FromSV a, SubReturn ret) => Subable ([a] -> PerlSubT s IO ret) where
     a <- liftPerl $ mapM fromSV args
     subBody undefined (lambda a)
 
-currySub :: (FromSV a, Subable others) => [PtrSV] -> (a -> others) -> PerlSubT s IO ()
+currySub :: (FromSV a, Subable others) => [SV] -> (a -> others) -> PerlSubT s IO ()
 currySub args lambda = do
   (a, others) <- case args of
     [] -> do
@@ -66,7 +66,7 @@ currySub args lambda = do
       return (a', as)
   subBody others (lambda a)
 
-instance Subable others => Subable (PtrSV -> others) where subBody = currySub
+instance Subable others => Subable (SV -> others) where subBody = currySub
 instance Subable others => Subable (Int -> others) where subBody = currySub
 instance Subable others => Subable (Double -> others) where subBody = currySub
 instance Subable others => Subable (String -> others) where subBody = currySub

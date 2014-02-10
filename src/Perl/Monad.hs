@@ -16,7 +16,7 @@ import Control.Monad.IO.Class
 import Perl.Type
 import Perl.Glue
 
-type ScopeFrame = [PtrSV]
+type ScopeFrame = [SV]
 emptyFrame = []
 
 newtype PerlT s m a = PerlT
@@ -34,19 +34,19 @@ runPerlT act = do
 scope :: MonadIO m => (forall s. PerlT s m a) -> PerlT s m a
 scope (PerlT act) = PerlT $ \perl scopeFrames -> do
   let
-    releasePool :: [PtrSV] -> IO ()
+    releasePool :: [SV] -> IO ()
     releasePool ps = forM_ ps $ \p -> svREFCNT_dec perl p
   (poolSV : otherFrames, a) <- act perl (emptyFrame : scopeFrames)
   liftIO $ releasePool poolSV
   return (otherFrames, a)
 
-keepSV :: MonadIO m => PtrSV -> PerlT s m ()
+keepSV :: MonadIO m => SV -> PerlT s m ()
 keepSV sv = PerlT $ \perl (pool : otherFrames) -> do
   liftIO $ svREFCNT_inc_NN sv
   return ((sv : pool) : otherFrames, ())
-keepAV :: MonadIO m => PtrAV -> PerlT s m ()
+keepAV :: MonadIO m => AV -> PerlT s m ()
 keepAV av = keepSV (castPtr av)
-keepHV :: MonadIO m => PtrHV -> PerlT s m ()
+keepHV :: MonadIO m => HV -> PerlT s m ()
 keepHV hv = keepSV (castPtr hv)
 
 liftScope :: Monad m => (forall s. PerlT s m a) -> PerlT s m a
@@ -73,7 +73,7 @@ instance MonadIO m => MonadIO (PerlT s m) where
   liftIO = lift . liftIO
 
 newtype PerlSubT s m a = PerlSubT
-  { unPerlSubT :: PtrPerl -> PtrCV -> m a
+  { unPerlSubT :: PtrPerl -> CV -> m a
   }
 
 liftPerl :: MonadIO m => (forall s. PerlT s m a) -> PerlSubT s m a
@@ -81,7 +81,7 @@ liftPerl act = PerlSubT $ \perl _ -> do
   ([], a) <- unPerlT (scope act) perl []
   return a
 
-wrapSub :: MonadIO m => (PtrPerl -> PtrCV -> IO ()) -> PerlT s m RefCV
+wrapSub :: MonadIO m => (PtrPerl -> CV -> IO ()) -> PerlT s m RefCV
 wrapSub fun = PerlT $ \perl (frame:frames) -> liftIO $ do
   funPtr <- wrap_sub_wrapper fun
   cv <- wrap_sub perl funPtr
@@ -90,7 +90,7 @@ wrapSub fun = PerlT $ \perl (frame:frames) -> liftIO $ do
 makeSub :: MonadIO m => (forall s. PerlSubT s IO ()) -> PerlT s m RefCV
 makeSub def = wrapSub $ unPerlSubT def
 
-regSub :: MonadIO m => CString -> (PtrPerl -> PtrCV -> IO ()) -> PerlT s m ()
+regSub :: MonadIO m => CString -> (PtrPerl -> CV -> IO ()) -> PerlT s m ()
 regSub name fun = PerlT $ \perl frames -> liftIO $ do
   funPtr <- wrap_sub_wrapper fun
   reg_sub perl name funPtr
