@@ -24,3 +24,12 @@ type PtrHV = Ptr HV
 
 data CV
 type PtrCV = Ptr CV
+
+data RSV
+type RefSV = Ptr RSV
+
+data RAV
+type RefAV = Ptr RAV
+
+data RHV
+type RefHV = Ptr RHV

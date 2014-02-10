@@ -114,6 +114,12 @@ char *svPVbytex(pTHX_ SV *sv, STRLEN *len){
     return SvPVbytex(sv, (*len));
 }
 
+/* ref */
+
+SV *svRV(SV *rv){
+    return SvRV(rv);
+}
+
 /* call */
 
 /* return: num of return values

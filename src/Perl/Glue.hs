@@ -103,6 +103,27 @@ foreign import ccall safe
   svPVbytex :: PtrPerl -> PtrSV -> Ptr StrLen -> IO (Ptr CChar)
 
 ------
+-- ref
+
+foreign import ccall unsafe
+  "Perl_newRV" perl_newSVRV :: PtrPerl -> PtrSV -> IO RefSV
+
+foreign import ccall unsafe
+  "Perl_newRV" perl_newAVRV :: PtrPerl -> PtrAV -> IO RefAV
+
+foreign import ccall unsafe
+  "Perl_newRV" perl_newHVRV :: PtrPerl -> PtrHV -> IO RefHV
+
+foreign import ccall unsafe
+  "svRV" svRV :: RefSV -> IO PtrSV
+
+foreign import ccall unsafe
+  "svRV" avRV :: RefAV -> IO PtrAV
+
+foreign import ccall unsafe
+  "svRV" hvRV :: RefHV -> IO PtrHV
+
+------
 -- eval
 
 foreign import ccall safe

@@ -124,6 +124,33 @@ setSVSV dst src = PerlT $ \perl frames -> do
   return (frames, ())
 
 ------
+-- ref
+
+newSVRef :: MonadIO m => PtrSV -> PerlT s m RefSV
+newSVRef sv = PerlT $ \perl (frame:frames) -> do
+  rv <- liftIO $ perl_newSVRV perl sv
+  return ((castPtr rv:frame):frames, rv)
+
+newAVRef :: MonadIO m => PtrAV -> PerlT s m RefAV
+newAVRef av = PerlT $ \perl (frame:frames) -> do
+  rv <- liftIO $ perl_newAVRV perl av
+  return ((castPtr av:frame):frames, rv)
+
+newHVRef :: MonadIO m => PtrHV -> PerlT s m RefHV
+newHVRef hv = PerlT $ \perl (frame:frames) -> do
+  rv <- liftIO $ perl_newHVRV perl hv
+  return ((castPtr rv:frame):frames, rv)
+
+deRefSV :: MonadIO m => RefSV -> PerlT s m PtrSV
+deRefSV = liftIO . svRV
+
+deRefAV :: MonadIO m => RefAV -> PerlT s m PtrAV
+deRefAV = liftIO . avRV
+
+deRefHV :: MonadIO m => RefHV -> PerlT s m PtrHV
+deRefHV = liftIO . hvRV
+
+------
 -- eval
 
 eval :: MonadIO m => CString -> PerlT s m PtrSV
