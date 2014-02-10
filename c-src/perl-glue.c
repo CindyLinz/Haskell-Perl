@@ -120,7 +120,7 @@ SV *svRV(SV *rv){
     return SvRV(rv);
 }
 
-int rvType(SV *rv){
+int rvTYPE(SV *rv){
     return SvTYPE(SvRV(rv));
 }
 

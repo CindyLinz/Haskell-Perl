@@ -124,7 +124,7 @@ foreign import ccall unsafe
   "svRV" hvRV :: RefHV -> IO PtrHV
 
 foreign import ccall unsafe
-  rvType :: PtrSV -> IO CInt
+  rvTYPE :: PtrSV -> IO CInt
 
 ------
 -- eval
