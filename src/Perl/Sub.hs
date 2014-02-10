@@ -77,7 +77,7 @@ subCommon body = do
   argsList <- liftIO $ getElems args
   subBody argsList body
 
-sub :: (MonadIO m, Subable a) => a -> PerlT s m PtrSV
+sub :: (MonadIO m, Subable a) => a -> PerlT s m RefCV
 sub body = makeSub $ subCommon body
 
 subDo :: SubReturn ret => PerlSubT s IO ret -> PerlSubT s IO ret

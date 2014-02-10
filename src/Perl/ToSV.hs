@@ -9,6 +9,7 @@ import Foreign.C.String
 import Perl.Type
 import Perl.Monad
 import Perl.MonadGlue
+import Perl.AsSV
 
 (.=) :: (MonadIO m, ToSV a) => PtrSV -> a -> PerlT s m PtrSV
 sv .= a = do
@@ -52,6 +53,32 @@ instance ToSV String where
   setSV sv str = PerlT $ \perl frames ->
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (setSVStr sv cstr (fromIntegral len)) perl frames
+
+asToSV :: (AsSV a, MonadIO m) => a -> PerlT s m PtrSV
+asToSV a = asSV a >>= toSV
+
+asToSVMortal :: (AsSV a, MonadIO m) => a -> PerlT s m PtrSV
+asToSVMortal a = asSV a >>= toSVMortal
+
+asSetSV :: (AsSV a, MonadIO m) => PtrSV -> a -> PerlT s m ()
+asSetSV sv a = asSV a >>= setSV sv
+
+instance ToSV RefSV where
+  toSV = asToSV
+  toSVMortal = asToSVMortal
+  setSV = asSetSV
+instance ToSV RefAV where
+  toSV = asToSV
+  toSVMortal = asToSVMortal
+  setSV = asSetSV
+instance ToSV RefHV where
+  toSV = asToSV
+  toSVMortal = asToSVMortal
+  setSV = asSetSV
+instance ToSV RefCV where
+  toSV = asToSV
+  toSVMortal = asToSVMortal
+  setSV = asSetSV
 
 class ToSVs a where
   toSVs :: MonadIO m => a -> PerlT s m [PtrSV]

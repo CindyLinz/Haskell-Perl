@@ -123,6 +123,9 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   "svRV" hvRV :: RefHV -> IO PtrHV
 
+foreign import ccall unsafe
+  rvType :: PtrSV -> IO CInt
+
 ------
 -- eval
 
@@ -148,7 +151,7 @@ foreign import ccall unsafe
   "wrapper" wrap_sub_wrapper :: (PtrPerl -> PtrCV -> IO ()) -> IO (FunPtr (PtrPerl -> PtrCV -> IO ()))
 
 foreign import ccall unsafe
-  wrap_sub :: PtrPerl -> FunPtr (PtrPerl -> PtrCV -> IO ()) -> IO PtrSV
+  wrap_sub :: PtrPerl -> FunPtr (PtrPerl -> PtrCV -> IO ()) -> IO RefCV
 
 foreign import ccall safe
   reg_sub :: PtrPerl -> CString -> FunPtr (PtrPerl -> PtrCV -> IO ()) -> IO ()

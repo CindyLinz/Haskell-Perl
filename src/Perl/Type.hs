@@ -33,3 +33,6 @@ type RefAV = Ptr RAV
 
 data RHV
 type RefHV = Ptr RHV
+
+data RCV
+type RefCV = Ptr RCV

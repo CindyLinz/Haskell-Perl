@@ -16,3 +16,4 @@ instance AsSV PtrCV where asSV = return . castPtr
 instance AsSV RefSV where asSV = return . castPtr
 instance AsSV RefAV where asSV = return . castPtr
 instance AsSV RefHV where asSV = return . castPtr
+instance AsSV RefCV where asSV = return . castPtr

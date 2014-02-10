@@ -120,6 +120,10 @@ SV *svRV(SV *rv){
     return SvRV(rv);
 }
 
+int rvType(SV *rv){
+    return SvTYPE(SvRV(rv));
+}
+
 /* call */
 
 /* return: num of return values

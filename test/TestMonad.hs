@@ -6,6 +6,8 @@ import Perl.FromSV
 import Perl.Call
 import Perl.Sub
 import Perl.Type
+import Perl.Ref
+import Perl.AsSV
 import Control.Monad.IO.Class
 
 main = runPerlT $ do
