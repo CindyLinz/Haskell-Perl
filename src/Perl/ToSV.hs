@@ -10,6 +10,11 @@ import Perl.Type
 import Perl.Monad
 import Perl.MonadGlue
 
+(.=) :: (MonadIO m, ToSV a) => PtrSV -> a -> PerlT s m PtrSV
+sv .= a = do
+  setSV sv a
+  return sv
+
 class ToSV a where
   toSV :: MonadIO m => a -> PerlT s m PtrSV
   toSVMortal :: MonadIO m => a -> PerlT s m PtrSV
