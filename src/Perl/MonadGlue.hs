@@ -169,7 +169,7 @@ callVar sv flag = PerlT $ \perl frames -> do
   a <- liftIO $ perl_call_sv perl sv flag
   return (frames, a)
 
-callName :: (Ix i, Ix j, Num j, MonadIO m) => CString -> CInt -> StorableArray i SV -> PerlT s m (StorableArray j SV)
+callName :: MonadIO m => CString -> CInt -> StorableArray Int SV -> PerlT s m (StorableArray Int SV)
 callName name flag args = PerlT $ \perl frames -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
   argc <- liftM (fromIntegral . rangeSize) (getBounds args)
   outn <- glue_call_pv perl name flag argc ptrArg ptrPtrOut
