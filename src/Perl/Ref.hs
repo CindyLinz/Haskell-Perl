@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances, FunctionalDependencies #-}
 module Perl.Ref
   where
 
@@ -8,7 +8,7 @@ import Perl.Type
 import Perl.Monad
 import Perl.MonadGlue
 
-class Refable a b where
+class Refable a b | a -> b, b -> a where
   newRef :: MonadIO m => a -> PerlT s m b
   deRef :: MonadIO m => b -> PerlT s m a
 
