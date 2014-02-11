@@ -20,21 +20,36 @@ data SubReturnObj = forall a. SubReturn a => SubReturnObj a
 retSub :: SubReturn a => a -> PerlSubT s IO SubReturnObj
 retSub = return . SubReturnObj
 
-instance SubReturn [ToSVObj] where
-  returnSub retList = do
-    retSVList <- liftPerl $ forM retList (\(ToSVObj a) -> toSVMortal a)
-    liftPerl $ forM_ retSVList G.incRefCnt
-    let len = length retSVList
-    rets <- liftIO $ newListArray (1,len) retSVList
-    G.setSubReturns rets
+returnSubToSV :: ToSV a => a -> PerlSubT s IO ()
+returnSubToSV a = do
+  aMortal <- liftPerl $ toSVMortal a
+  rets <- liftIO $ newArray (1,1) aMortal
+  G.setSubReturns rets
+
+returnSubToSVList :: ToSV a => [a] -> PerlSubT s IO ()
+returnSubToSVList retList = do
+  retSVList <- liftPerl $ forM retList (\a -> toSVMortal a)
+  let len = length retSVList
+  rets <- liftIO $ newListArray (1,len) retSVList
+  G.setSubReturns rets
 
 instance SubReturn SubReturnObj where returnSub (SubReturnObj a) = returnSub a
-instance SubReturn () where returnSub _ = returnSub ([] :: [ToSVObj])
-instance SubReturn ToSVObj where returnSub a = returnSub [a]
-instance SubReturn SV where returnSub a = returnSub [ToSVObj a]
-instance SubReturn Int where returnSub a = returnSub [ToSVObj a]
-instance SubReturn Double where returnSub a = returnSub [ToSVObj a]
-instance SubReturn String where returnSub a = returnSub [ToSVObj a]
+
+instance SubReturn () where
+  returnSub _ = do
+    rets <- liftIO $ newArray (1,0) undefined
+    G.setSubReturns rets
+
+instance SubReturn ToSVObj where returnSub = returnSubToSV
+instance SubReturn SV where returnSub = returnSubToSV
+instance SubReturn Int where returnSub = returnSubToSV
+instance SubReturn Double where returnSub = returnSubToSV
+instance SubReturn String where returnSub = returnSubToSV
+instance SubReturn RefSV where returnSub = returnSubToSV
+instance SubReturn RefAV where returnSub = returnSubToSV
+instance SubReturn RefHV where returnSub = returnSubToSV
+instance SubReturn RefCV where returnSub = returnSubToSV
+instance ToSV a => SubReturn [a] where returnSub = returnSubToSVList
 instance (ToSV a, ToSV b) => SubReturn (a, b) where returnSub (a, b) = returnSub [ToSVObj a, ToSVObj b]
 instance (ToSV a, ToSV b, ToSV c) => SubReturn (a, b, c) where returnSub (a, b, c) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c]
 instance (ToSV a, ToSV b, ToSV c, ToSV d) => SubReturn (a, b, c, d) where returnSub (a, b, c, d) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d]
