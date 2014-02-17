@@ -8,6 +8,7 @@ import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
 import Control.Monad
+import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 import Data.Array.Unsafe
 import Data.Array.MArray
@@ -53,9 +54,9 @@ perl = runPerlT $ do
     argList <- liftIO $ getElems args
     liftIO $ putStrLn "Hello sub:"
     forM_ argList $ \elem -> do
-      i <- liftPerl $ svToInt elem
+      i <- lift $ svToInt elem
       liftIO $ putStrLn $ "  got: " ++ show i
-      liftPerl $ setSVInt elem (i+i)
+      lift $ setSVInt elem (i+i)
     liftIO (newListArray (1,2) $ reverse argList) >>= setSubReturns
   callStr <- liftIO $ newCString "call"
   callArgList <- forM [3,4,5] newNumSV

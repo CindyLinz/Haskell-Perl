@@ -75,11 +75,7 @@ instance MonadIO m => MonadIO (PerlT s m) where
 newtype PerlSubT s m a = PerlSubT
   { unPerlSubT :: PtrPerl -> CV -> m a
   }
-
-liftPerl :: MonadIO m => (forall s. PerlT s m a) -> PerlSubT s m a
-liftPerl act = PerlSubT $ \perl _ -> do
-  ([], a) <- unPerlT (scope act) perl []
-  return a
+type PerlSub s = PerlSubT s (Perl s)
 
 wrapSub :: MonadIO m => (PtrPerl -> CV -> IO ()) -> PerlT s m RefCV
 wrapSub fun = PerlT $ \perl (frame:frames) -> liftIO $ do
@@ -87,8 +83,8 @@ wrapSub fun = PerlT $ \perl (frame:frames) -> liftIO $ do
   cv <- wrap_sub perl funPtr
   return ((castPtr cv:frame):frames, cv)
 
-makeSub :: MonadIO m => (forall s. PerlSubT s IO ()) -> PerlT s m RefCV
-makeSub def = wrapSub $ unPerlSubT def
+makeSub :: MonadIO m => (forall s1. PerlSub s1 ()) -> PerlT s m RefCV
+makeSub def = wrapSub $ \perl cv -> unPerlT (scope (unPerlSubT def perl cv)) perl [] >> return ()
 
 regSub :: MonadIO m => CString -> (PtrPerl -> CV -> IO ()) -> PerlT s m ()
 regSub name fun = PerlT $ \perl frames -> liftIO $ do
@@ -96,8 +92,8 @@ regSub name fun = PerlT $ \perl frames -> liftIO $ do
   reg_sub perl name funPtr
   return (frames, ())
 
-defineSub :: MonadIO m => CString -> (forall s. PerlSubT s IO ()) -> PerlT s m ()
-defineSub name def = regSub name $ unPerlSubT def
+defineSub :: MonadIO m => CString -> (forall s1. PerlSub s1 ()) -> PerlT s m ()
+defineSub name def = regSub name $ \perl cv -> unPerlT (scope (unPerlSubT def perl cv)) perl [] >> return ()
 
 instance Functor m => Functor (PerlSubT s m) where
   fmap f k = PerlSubT $ \perl cv ->

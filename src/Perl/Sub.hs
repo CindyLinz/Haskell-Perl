@@ -3,6 +3,7 @@ module Perl.Sub
   where
 
 import Control.Monad
+import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 import Foreign.C.String
 import Data.Array.MArray
@@ -14,21 +15,21 @@ import Perl.FromSV
 import qualified Perl.MonadGlue as G
 
 class SubReturn a where
-  returnSub :: a -> PerlSubT s IO ()
+  returnSub :: a -> PerlSub s ()
 
 data SubReturnObj = forall a. SubReturn a => SubReturnObj a
-retSub :: SubReturn a => a -> PerlSubT s IO SubReturnObj
+retSub :: SubReturn a => a -> PerlSub s SubReturnObj
 retSub = return . SubReturnObj
 
-returnSubToSV :: ToSV a => a -> PerlSubT s IO ()
+returnSubToSV :: ToSV a => a -> PerlSub s ()
 returnSubToSV a = do
-  aMortal <- liftPerl $ toSVMortal a
+  aMortal <- lift $ toSVMortal a
   rets <- liftIO $ newArray (1,1) aMortal
   G.setSubReturns rets
 
-returnSubToSVList :: ToSV a => [a] -> PerlSubT s IO ()
+returnSubToSVList :: ToSV a => [a] -> PerlSub s ()
 returnSubToSVList retList = do
-  retSVList <- liftPerl $ forM retList (\a -> toSVMortal a)
+  retSVList <- lift $ forM retList (\a -> toSVMortal a)
   let len = length retSVList
   rets <- liftIO $ newListArray (1,len) retSVList
   G.setSubReturns rets
@@ -58,26 +59,26 @@ instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f) => SubReturn (a, b, c,
 instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f, ToSV g) => SubReturn (a, b, c, d, e, f, g) where returnSub (a, b, c, d, e, f, g) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
 
 class Subable a where
-  subBody :: [SV] -> a -> PerlSubT s IO ()
+  subBody :: [SV] -> a -> PerlSub s ()
 
-instance SubReturn ret => Subable (PerlSubT s IO ret) where
-  subBody _ body = PerlSubT $ \perl cv -> do
-    ret <- unPerlSubT body perl cv
-    unPerlSubT (returnSub ret) perl cv
+instance SubReturn ret => Subable (PerlSub s ret) where
+  subBody _ body = PerlSubT $ \perl cv -> PerlT $ \_ frames -> do
+    (frames', ret) <- unPerlT (unPerlSubT body perl cv) perl frames
+    unPerlT (unPerlSubT (returnSub ret) perl cv) perl frames'
 
-instance (FromSV a, SubReturn ret) => Subable ([a] -> PerlSubT s IO ret) where
+instance (FromSV a, SubReturn ret) => Subable ([a] -> PerlSub s ret) where
   subBody args lambda = do
-    a <- liftPerl $ mapM fromSV args
+    a <- lift $ mapM fromSV args
     subBody undefined (lambda a)
 
-currySub :: (FromSV a, Subable others) => [SV] -> (a -> others) -> PerlSubT s IO ()
+currySub :: (FromSV a, Subable others) => [SV] -> (a -> others) -> PerlSub s ()
 currySub args lambda = do
   (a, others) <- case args of
     [] -> do
-      a' <- liftPerl fromSVNon
+      a' <- lift fromSVNon
       return (a', [])
     (a:as) -> do
-      a' <- liftPerl $ fromSV a
+      a' <- lift $ fromSV a
       return (a', as)
   subBody others (lambda a)
 
@@ -86,7 +87,7 @@ instance Subable others => Subable (Int -> others) where subBody = currySub
 instance Subable others => Subable (Double -> others) where subBody = currySub
 instance Subable others => Subable (String -> others) where subBody = currySub
 
-subCommon :: Subable a => a -> PerlSubT s IO ()
+subCommon :: Subable a => a -> PerlSub s ()
 subCommon body = do
   args <- G.getSubArgs
   argsList <- liftIO $ getElems args
@@ -95,7 +96,7 @@ subCommon body = do
 sub :: (MonadIO m, Subable a) => a -> PerlT s m RefCV
 sub body = makeSub $ subCommon body
 
-subDo :: SubReturn ret => PerlSubT s IO ret -> PerlSubT s IO ret
+subDo :: SubReturn ret => PerlSub s ret -> PerlSub s ret
 subDo = id
 
 defSub :: (MonadIO m, Subable a) => String -> a -> PerlT s m ()
