@@ -2,9 +2,11 @@
 module Perl.FromSV
   where
 
+import Control.Monad
 import Control.Monad.IO.Class
 import Foreign.C.Types
 import Foreign.C.String
+import Foreign.Ptr
 
 import Perl.Type
 import Perl.Monad
@@ -37,6 +39,25 @@ instance FromSV String where
   fromSV sv = do
     cStrLen <- svToStr sv
     liftIO $ peekCStringLen cStrLen
+
+refFromSVNon :: MonadIO m => PerlT s m (Ptr a)
+refFromSVNon = newSV >>= return . castPtr
+
+refFromSV :: MonadIO m => SV -> PerlT s m (Ptr a)
+refFromSV sv = keepSV sv >> (return $ castPtr sv)
+
+instance FromSV RefSV where
+  fromSVNon = refFromSVNon
+  fromSV = refFromSV
+instance FromSV RefAV where
+  fromSVNon = refFromSVNon
+  fromSV = refFromSV
+instance FromSV RefHV where
+  fromSVNon = refFromSVNon
+  fromSV = refFromSV
+instance FromSV RefCV where
+  fromSVNon = refFromSVNon
+  fromSV = refFromSV
 
 class FromSVs a where
   fromSVs :: MonadIO m => [SV] -> PerlT s m a

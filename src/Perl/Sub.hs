@@ -86,6 +86,10 @@ instance Subable others => Subable (SV -> others) where subBody = currySub
 instance Subable others => Subable (Int -> others) where subBody = currySub
 instance Subable others => Subable (Double -> others) where subBody = currySub
 instance Subable others => Subable (String -> others) where subBody = currySub
+instance Subable others => Subable (RefSV -> others) where subBody = currySub
+instance Subable others => Subable (RefAV -> others) where subBody = currySub
+instance Subable others => Subable (RefHV -> others) where subBody = currySub
+instance Subable others => Subable (RefCV -> others) where subBody = currySub
 
 subCommon :: Subable a => a -> PerlSub s ()
 subCommon body = do

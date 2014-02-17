@@ -4,10 +4,12 @@ module Perl.AV
 
 import Control.Monad.IO.Class
 import Data.Array.Storable
+import Foreign.C.Types
 
 import Perl.Type
 import Perl.Monad
 import Perl.MonadGlue
+import qualified Perl.MonadGlue
 import Perl.AsSV
 import Perl.ToSV
 import Perl.FromSV
@@ -44,3 +46,17 @@ instance ToAV [String] where toAV = toSVToAV
 
 class FromAV a where
   fromAV :: MonadIO m => AV -> PerlT s m a
+
+readAV :: (FromSV a, MonadIO m) => AV -> CInt -> PerlT s m (Maybe a)
+readAV av i = do
+  res <- fetchAV av i
+  case res of
+    Nothing -> return Nothing
+    Just a -> do
+      sv <- fromSV a
+      return (Just sv)
+
+writeAV :: (ToSV a, MonadIO m) => AV -> CInt -> a -> PerlT s m Bool
+writeAV av i v = do
+  sv <- toSV v
+  storeAV av i sv

@@ -171,6 +171,24 @@ newAV arr = PerlT $ \perl (frame:frames) -> liftIO $ do
     a <- liftIO $ perl_av_make perl (fromIntegral $ upper - lower + 1) ptrAs
     return ((castPtr a:frame):frames, a)
 
+fetchAV :: MonadIO m => AV -> CInt -> PerlT s m (Maybe SV)
+fetchAV av i = PerlT $ \perl frames -> liftIO $ do
+  ptrSv <- perl_av_fetch perl av i 1
+  if ptrSv == nullPtr
+    then return (frames, Nothing)
+    else do
+      sv <- peek ptrSv
+      return (frames, Just sv)
+
+storeAV :: MonadIO m => AV -> CInt -> SV -> PerlT s m Bool
+storeAV av i v = PerlT $ \perl frames -> liftIO $ do
+  ptrSv <- perl_av_store perl av i v
+  if ptrSv == nullPtr
+    then return (frames, False)
+    else do
+      svREFCNT_inc_void_NN v
+      return (frames, True)
+
 ------
 -- eval
 

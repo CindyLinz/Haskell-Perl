@@ -3,6 +3,7 @@ module Main where
 import Perl.Monad
 import Perl.Eval
 import Perl.FromSV
+import Perl.ToSV
 import Perl.Call
 import Perl.Sub
 import Perl.Type
@@ -10,6 +11,7 @@ import Perl.Ref
 import Perl.AsSV
 import Perl.AsRef
 import Perl.AV
+import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
@@ -69,10 +71,19 @@ main = runPerlT $ do
   defSub "makeSeq" $ \n -> do
     liftIO $ putStrLn $ show n
     av <- lift $ toAV [1..(n :: Int)]
-    avRefCnt <- lift $ refCnt $ castPtr av
+    lift $ when (n >= 1) $ do
+      writeAV av 0 "xx"
+      return ()
     avRef <- lift $ newRef av
     retSub avRef
 
-  eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/ }"
+  defSub "dumpSeq" $ \avRef -> do
+    lift $ do
+      av <- deRef avRef
+      a <- readAV av 0
+      liftIO $ putStrLn $ "arr[0] = " ++ show (a :: Maybe Int)
+    retSub ()
+
+  eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq([3,4,5]); }"
 
   return ()
