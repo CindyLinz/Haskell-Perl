@@ -30,6 +30,9 @@ foreign import ccall safe
 ------
 -- ref count
 
+foreign import ccall unsafe
+  svREFCNT :: SV -> IO CUInt
+
 foreign import ccall safe
   svREFCNT_dec :: PtrPerl -> SV -> IO SV
 

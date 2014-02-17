@@ -24,6 +24,9 @@ import Perl.Monad
 ------
 -- ref count
 
+refCnt :: MonadIO m => SV -> PerlT s m CUInt
+refCnt = liftIO . svREFCNT
+
 incRefCnt :: MonadIO m => SV -> PerlT s m ()
 incRefCnt = liftIO . svREFCNT_inc_void_NN
 

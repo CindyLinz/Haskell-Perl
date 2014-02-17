@@ -61,6 +61,10 @@ SV *glue_eval_pv(pTHX_ const char *p, I32 croak_on_error){
 
 /* ref count */
 
+U32 svREFCNT(SV *sv){
+    return SvREFCNT(sv);
+}
+
 void svREFCNT_dec(pTHX_ SV *sv){
     SvREFCNT_dec(sv);
 }
