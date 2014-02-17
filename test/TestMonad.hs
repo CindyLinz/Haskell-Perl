@@ -9,7 +9,12 @@ import Perl.Type
 import Perl.Ref
 import Perl.AsSV
 import Perl.AsRef
+import Perl.AV
+import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
+
+import Perl.MonadGlue (refCnt)
+import Foreign.Ptr
 
 main = runPerlT $ do
   res <- eval $
@@ -60,5 +65,14 @@ main = runPerlT $ do
     liftIO $ putStrLn $ "CindyLinz is beautiful" ++ take n (repeat '!')
     retSub ()
   () <- call "cindy_is_beautiful" "5"
+
+  defSub "makeSeq" $ \n -> do
+    liftIO $ putStrLn $ show n
+    av <- lift $ toAV [1..(n :: Int)]
+    avRefCnt <- lift $ refCnt $ castPtr av
+    avRef <- lift $ newRef av
+    retSub avRef
+
+  eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/ }"
 
   return ()

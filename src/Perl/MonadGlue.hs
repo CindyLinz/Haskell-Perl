@@ -157,6 +157,21 @@ rvType :: MonadIO m => SV -> PerlT s m CInt
 rvType = liftIO . rvTYPE
 
 ------
+-- AV
+
+newAVEmpty :: MonadIO m => PerlT s m AV
+newAVEmpty = PerlT $ \perl (frame:frames) -> do
+  a <- liftIO $ perl_newAV perl
+  return ((castPtr a:frame):frames, a)
+
+newAV :: MonadIO m => StorableArray Int SV -> PerlT s m AV
+newAV arr = PerlT $ \perl (frame:frames) -> liftIO $ do
+  withStorableArray arr $ \ptrAs -> do
+    (lower, upper) <- getBounds arr
+    a <- liftIO $ perl_av_make perl (fromIntegral $ upper - lower + 1) ptrAs
+    return ((castPtr a:frame):frames, a)
+
+------
 -- eval
 
 eval :: MonadIO m => CString -> PerlT s m SV

@@ -130,6 +130,15 @@ foreign import ccall unsafe
   rvTYPE :: SV -> IO CInt
 
 ------
+-- AV
+
+foreign import ccall unsafe
+  "Perl_newAV" perl_newAV :: PtrPerl -> IO AV
+
+foreign import ccall unsafe
+  "Perl_av_make" perl_av_make :: PtrPerl -> CSize -> Ptr SV -> IO AV
+
+------
 -- eval
 
 foreign import ccall safe
