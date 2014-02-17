@@ -17,7 +17,7 @@ class FromSV a where
 instance FromSV SV where
   fromSVNon = newSV
   fromSV sv = do
-    incRefCnt sv
+    keepSV sv
     return sv
 
 instance FromSV Int where
