@@ -17,8 +17,20 @@ cabal-version:       >=1.8
 
 library
   exposed-modules:     Perl
+                     , Perl.Type
+                     , Perl.Sub
+                     , Perl.Call
+                     , Perl.Eval
                      , Perl.Monad
+                     , Perl.MonadGlue
                      , Perl.Glue
+                     , Perl.HV
+                     , Perl.AV
+                     , Perl.ToSV
+                     , Perl.FromSV
+                     , Perl.AsSV
+                     , Perl.Ref
+                     , Perl.AsRef
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
   -- other-modules:       
