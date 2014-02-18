@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables, Rank2Types, FlexibleContexts, ExistentialQuantification #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables, Rank2Types, FlexibleContexts, ExistentialQuantification, OverlappingInstances #-}
 module Perl.Sub
   where
 
@@ -90,6 +90,7 @@ instance Subable others => Subable (RefSV -> others) where subBody = currySub
 instance Subable others => Subable (RefAV -> others) where subBody = currySub
 instance Subable others => Subable (RefHV -> others) where subBody = currySub
 instance Subable others => Subable (RefCV -> others) where subBody = currySub
+instance SubReturn ret => Subable (String -> PerlSub s ret) where subBody = currySub
 
 subCommon :: Subable a => a -> PerlSub s ()
 subCommon body = do

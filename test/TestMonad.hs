@@ -128,6 +128,11 @@ main = runPerlT $ do
     lift $ deRef hvRef >>= clearHV
     retSub ()
 
+  defSub "echo" $ \str -> do
+    liftIO $ putStrLn str
+    retSub ()
+
   eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
+  eval "{ echo 'CindyLinz is pretty' }"
 
   return ()
