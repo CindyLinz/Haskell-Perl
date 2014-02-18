@@ -176,14 +176,20 @@ clearAV av = PerlT $ \perl frames -> liftIO $ do
   perl_av_clear perl av
   return (frames, ())
 
-fetchAV :: MonadIO m => AV -> CInt -> PerlT s m (Maybe SV)
-fetchAV av i = PerlT $ \perl frames -> liftIO $ do
-  ptrSv <- perl_av_fetch perl av i 1
+peekOrFetchAV :: MonadIO m => CUInt -> AV -> CInt -> PerlT s m (Maybe SV)
+peekOrFetchAV flag av i = PerlT $ \perl frames -> liftIO $ do
+  ptrSv <- perl_av_fetch perl av i flag
   if ptrSv == nullPtr
     then return (frames, Nothing)
     else do
       sv <- peek ptrSv
       return (frames, Just sv)
+
+peekAV :: MonadIO m => AV -> CInt -> PerlT s m (Maybe SV)
+peekAV = peekOrFetchAV 0
+
+fetchAV :: MonadIO m => AV -> CInt -> PerlT s m (Maybe SV)
+fetchAV = peekOrFetchAV 1
 
 storeAV :: MonadIO m => AV -> CInt -> SV -> PerlT s m ()
 storeAV av i v = PerlT $ \perl frames -> liftIO $ do

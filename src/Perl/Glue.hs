@@ -135,7 +135,7 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   "Perl_newAV" perl_newAV :: PtrPerl -> IO AV
 
-foreign import ccall unsafe
+foreign import ccall safe
   "Perl_av_make" perl_av_make :: PtrPerl -> CInt -> Ptr SV -> IO AV
 
 foreign import ccall safe

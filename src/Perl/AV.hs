@@ -9,6 +9,7 @@ module Perl.AV
   , shiftAV
   , unshiftAV
   -- from MonadGlue
+  , G.peekAV
   , G.fetchAV
   , G.storeAV
   , G.lengthAV
@@ -64,7 +65,7 @@ fromSVFromAV :: (FromSV a, MonadIO m) => AV -> PerlT s m [a]
 fromSVFromAV av = do
   len <- G.lengthAV av
   forM (take (fromIntegral len) [0..]) $ \i -> do
-    res <- G.fetchAV av i
+    res <- G.peekAV av i
     case res of
       Nothing -> fromSVNon
       Just a -> fromSV a
@@ -81,7 +82,7 @@ instance FromAV [String] where fromAV = fromSVFromAV
 
 readAV :: (FromSV a, MonadIO m) => AV -> CInt -> PerlT s m a
 readAV av i = do
-  res <- G.fetchAV av i
+  res <- G.peekAV av i
   case res of
     Nothing -> fromSVNon
     Just a -> fromSV a
