@@ -15,7 +15,6 @@ import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
-import Perl.MonadGlue (refCnt)
 import Foreign.Ptr
 
 main = runPerlT $ do
@@ -71,19 +70,28 @@ main = runPerlT $ do
   defSub "makeSeq" $ \n -> do
     liftIO $ putStrLn $ show n
     av <- lift $ toAV [1..(n :: Int)]
-    lift $ when (n >= 1) $ do
-      writeAV av 0 "xx"
-      return ()
+    lift $ do
+      when (n >= 1) $ writeAV av 0 "xx"
+      pushAV av "last"
+      unshiftAV av "first"
     avRef <- lift $ newRef av
     retSub avRef
 
   defSub "dumpSeq" $ \avRef -> do
     lift $ do
       av <- deRef avRef
-      a <- readAV av 0
-      liftIO $ putStrLn $ "arr[0] = " ++ show (a :: Maybe Int)
+      first <- shiftAV av
+      last <- popAV av
+      len <- lengthAV av
+      liftIO $ putStrLn $ "first = " ++ first ++ ", last = " ++ last ++ ", len = " ++ show len
+      forM_ (take (fromIntegral len) [0..]) $ \i -> do
+        a <- readAV av i
+        liftIO $ putStrLn $ "arr[" ++ show i ++ "] = " ++ show (a :: Int)
+
+      intList <- fromAV av
+      liftIO $ putStrLn $ "another dump " ++ show (intList :: [Int])
     retSub ()
 
-  eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq([3,4,5]); }"
+  eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
 
   return ()

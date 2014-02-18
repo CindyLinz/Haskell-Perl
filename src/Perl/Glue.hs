@@ -139,10 +139,31 @@ foreign import ccall unsafe
   "Perl_av_make" perl_av_make :: PtrPerl -> CInt -> Ptr SV -> IO AV
 
 foreign import ccall safe
+  "Perl_av_clear" perl_av_clear :: PtrPerl -> AV -> IO ()
+
+foreign import ccall safe
   "Perl_av_fetch" perl_av_fetch :: PtrPerl -> AV -> CInt -> CUInt -> IO (Ptr SV)
 
 foreign import ccall safe
   "Perl_av_store" perl_av_store :: PtrPerl -> AV -> CInt -> SV -> IO (Ptr SV)
+
+foreign import ccall safe
+  "Perl_av_exists" perl_av_exists :: PtrPerl -> AV -> CInt -> IO Bool
+
+foreign import ccall safe
+  "Perl_av_len" perl_av_len :: PtrPerl -> AV -> IO CInt
+
+foreign import ccall safe
+  "Perl_av_push" perl_av_push :: PtrPerl -> AV -> SV -> IO ()
+
+foreign import ccall safe
+  perl_av_unshift :: PtrPerl -> AV -> SV -> IO ()
+
+foreign import ccall safe
+  "Perl_av_pop" perl_av_pop :: PtrPerl -> AV -> IO SV
+
+foreign import ccall safe
+  "Perl_av_shift" perl_av_shift :: PtrPerl -> AV -> IO SV
 
 ------
 -- eval

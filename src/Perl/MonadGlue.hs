@@ -171,6 +171,11 @@ newAV arr = PerlT $ \perl (frame:frames) -> liftIO $ do
     a <- liftIO $ perl_av_make perl (fromIntegral $ upper - lower + 1) ptrAs
     return ((castPtr a:frame):frames, a)
 
+clearAV :: MonadIO m => AV -> PerlT s m ()
+clearAV av = PerlT $ \perl frames -> liftIO $ do
+  perl_av_clear perl av
+  return (frames, ())
+
 fetchAV :: MonadIO m => AV -> CInt -> PerlT s m (Maybe SV)
 fetchAV av i = PerlT $ \perl frames -> liftIO $ do
   ptrSv <- perl_av_fetch perl av i 1
@@ -180,14 +185,44 @@ fetchAV av i = PerlT $ \perl frames -> liftIO $ do
       sv <- peek ptrSv
       return (frames, Just sv)
 
-storeAV :: MonadIO m => AV -> CInt -> SV -> PerlT s m Bool
+storeAV :: MonadIO m => AV -> CInt -> SV -> PerlT s m ()
 storeAV av i v = PerlT $ \perl frames -> liftIO $ do
   ptrSv <- perl_av_store perl av i v
-  if ptrSv == nullPtr
-    then return (frames, False)
-    else do
-      svREFCNT_inc_void_NN v
-      return (frames, True)
+  when (ptrSv /= nullPtr) $ svREFCNT_inc_void_NN v
+  return (frames, ())
+
+existsAV :: MonadIO m => AV -> CInt -> PerlT s m Bool
+existsAV av i = PerlT $ \perl frames -> liftIO $ do
+  res <- perl_av_exists perl av i
+  return (frames, res)
+
+lengthAV :: MonadIO m => AV -> PerlT s m CInt
+lengthAV av = PerlT $ \perl frames -> liftIO $ do
+  res <- perl_av_len perl av
+  let len = res + 1
+  len `seq` return (frames, len)
+
+pushAV :: MonadIO m => AV -> SV -> PerlT s m ()
+pushAV av sv = PerlT $ \perl frames -> liftIO $ do
+  svREFCNT_inc_void_NN sv
+  perl_av_push perl av sv
+  return (frames, ())
+
+unshiftAV :: MonadIO m => AV -> SV -> PerlT s m ()
+unshiftAV av sv = PerlT $ \perl frames -> liftIO $ do
+  svREFCNT_inc_void_NN sv
+  perl_av_unshift perl av sv
+  return (frames, ())
+
+popAV :: MonadIO m => AV -> PerlT s m SV
+popAV av = PerlT $ \perl frames -> liftIO $ do
+  res <- perl_av_pop perl av
+  return (frames, res)
+
+shiftAV :: MonadIO m => AV -> PerlT s m SV
+shiftAV av = PerlT $ \perl frames -> liftIO $ do
+  res <- perl_av_shift perl av
+  return (frames, res)
 
 ------
 -- eval

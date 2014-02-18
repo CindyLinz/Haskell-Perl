@@ -128,6 +128,12 @@ int rvTYPE(SV *rv){
     return SvTYPE(SvRV(rv));
 }
 
+/* av */
+void perl_av_unshift(pTHX_ AV *av, SV *sv){
+    av_unshift(av, 1);
+    av_store(av, 0, sv);
+}
+
 /* call */
 
 /* return: num of return values
