@@ -90,6 +90,11 @@ main = runPerlT $ do
 
       intList <- fromAV av
       liftIO $ putStrLn $ "another dump " ++ show (intList :: [Int])
+
+      e1 <- existsAV av 1
+      clearAV av
+      e2 <- existsAV av 1
+      liftIO $ putStrLn $ "before clear: " ++ show e1 ++ ", after clear: " ++ show e2
     retSub ()
 
   eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"

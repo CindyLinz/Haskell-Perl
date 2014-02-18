@@ -13,6 +13,7 @@ module Perl.AV
   , G.storeAV
   , G.lengthAV
   , G.existsAV
+  , G.clearAV
   ) where
 
 import Control.Monad
