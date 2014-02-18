@@ -134,6 +134,31 @@ void perl_av_unshift(pTHX_ AV *av, SV *sv){
     av_store(av, 0, sv);
 }
 
+/* hv */
+HV *perl_newHV(pTHX){
+    return newHV();
+}
+
+SV **perl_hv_peek(pTHX_ HV *hv, const char *key, STRLEN klen){
+    return hv_fetch(hv, key, klen, 0);
+}
+
+SV **perl_hv_fetch(pTHX_ HV *hv, const char *key, STRLEN klen){
+    return hv_fetch(hv, key, klen, 1);
+}
+
+bool perl_hv_exists(pTHX_ HV *hv, const char *key, STRLEN klen){
+    return hv_exists(hv, key, klen);
+}
+
+SV **perl_hv_store(pTHX_ HV *hv, const char *key, STRLEN klen, SV *val){
+    return hv_store(hv, key, klen, val, 0);
+}
+
+SV *perl_hv_delete(pTHX_ HV *hv, const char *key, STRLEN klen){
+    return hv_delete(hv, key, klen, 0);
+}
+
 /* call */
 
 /* return: num of return values

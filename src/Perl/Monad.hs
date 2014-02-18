@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE Rank2Types, MultiParamTypeClasses #-}
 module Perl.Monad
   where
 
@@ -53,6 +53,12 @@ liftScope :: Monad m => (forall s. PerlT s m a) -> PerlT s m a
 liftScope (PerlT act) = PerlT $ \perl (headFrame : otherFrames) -> do
   (otherFrames', a) <- act perl otherFrames
   return (headFrame : otherFrames', a)
+
+perlWithAnyIO :: MonadIO m => (forall b0. (a -> IO b0) -> IO b0) -> (a -> PerlT s IO b) -> PerlT s m b
+perlWithAnyIO oriWith act =
+  PerlT $ \perl frames -> do
+    liftIO $ oriWith $ \a ->
+      unPerlT (act a) perl frames
 
 instance Functor m => Functor (PerlT s m) where
   fmap f k = PerlT $ \perl scopeFrames ->

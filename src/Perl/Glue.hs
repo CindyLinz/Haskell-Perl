@@ -166,6 +166,30 @@ foreign import ccall safe
   "Perl_av_shift" perl_av_shift :: PtrPerl -> AV -> IO SV
 
 ------
+-- HV
+
+foreign import ccall unsafe
+  perl_newHV :: PtrPerl -> IO HV
+
+foreign import ccall safe
+  "Perl_hv_clear" perl_hv_clear :: PtrPerl -> HV -> IO ()
+
+foreign import ccall safe
+  perl_hv_peek :: PtrPerl -> HV -> CString -> StrLen -> IO (Ptr SV)
+
+foreign import ccall safe
+  perl_hv_fetch :: PtrPerl -> HV -> CString -> StrLen -> IO (Ptr SV)
+
+foreign import ccall safe
+  perl_hv_exists :: PtrPerl -> HV -> CString -> StrLen -> IO Bool
+
+foreign import ccall safe
+  perl_hv_store :: PtrPerl -> HV -> CString -> StrLen -> SV -> IO (Ptr SV)
+
+foreign import ccall safe
+  perl_hv_delete :: PtrPerl -> HV -> CString -> StrLen -> IO SV
+
+------
 -- eval
 
 foreign import ccall safe

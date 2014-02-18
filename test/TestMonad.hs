@@ -11,11 +11,13 @@ import Perl.Ref
 import Perl.AsSV
 import Perl.AsRef
 import Perl.AV
+import Perl.HV
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
 import Foreign.Ptr
+import Data.Char
 
 main = runPerlT $ do
   res <- eval $
@@ -98,5 +100,34 @@ main = runPerlT $ do
     retSub ()
 
   eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
+
+  defSub "defAscii" $ do
+    hvRef <- lift $ do
+      hv <- newHVEmpty
+      forM_ ['A'..'G'] $ \c -> do
+        writeHV hv [c] (ord c)
+      newRef hv
+    retSub hvRef
+
+  defSub "invAscii" $ \hvRef keys -> do
+    lift $ do
+      hv <- deRef hvRef
+      forM_ keys $ \k -> do
+        n <- readHV hv (k :: String)
+        writeHV hv k (-n :: Int)
+    retSub ()
+
+  defSub "deleteHash" $ \hvRef keys -> do
+    lift $ do
+      hv <- deRef hvRef
+      forM_ keys $ \k -> do
+        deleteHV_ hv (k :: String)
+    retSub ()
+
+  defSub "clearHash" $ \hvRef -> do
+    lift $ deRef hvRef >>= clearHV
+    retSub ()
+
+  eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
 
   return ()

@@ -231,6 +231,52 @@ shiftAV av = PerlT $ \perl frames -> liftIO $ do
   return (frames, res)
 
 ------
+-- HV
+
+newHVEmpty :: MonadIO m => PerlT s m HV
+newHVEmpty = PerlT $ \perl (frame:frames) -> liftIO $ do
+  hv <- perl_newHV perl
+  return ((castPtr hv:frame):frames, hv)
+
+clearHV :: MonadIO m => HV -> PerlT s m ()
+clearHV hv = PerlT $ \perl frames -> liftIO $ do
+  perl_hv_clear perl hv
+  return (frames, ())
+
+peekOrFetchHV :: MonadIO m => (PtrPerl -> HV -> CString -> StrLen -> IO (Ptr SV)) -> HV -> CStringLen -> PerlT s m (Maybe SV)
+peekOrFetchHV act hv (key, klen) = PerlT $ \perl frames -> liftIO $ do
+  ptrSv <- act perl hv key (fromIntegral klen)
+  if ptrSv == nullPtr
+    then return (frames, Nothing)
+    else do
+      sv <- peek ptrSv
+      return (frames, Just sv)
+
+peekHV :: MonadIO m => HV -> CStringLen -> PerlT s m (Maybe SV)
+peekHV = peekOrFetchHV perl_hv_peek
+
+fetchHV :: MonadIO m => HV -> CStringLen -> PerlT s m (Maybe SV)
+fetchHV = peekOrFetchHV perl_hv_fetch
+
+existsHV :: MonadIO m => HV -> CStringLen -> PerlT s m Bool
+existsHV hv (key, klen) = PerlT $ \perl frames -> liftIO $ do
+  res <- perl_hv_exists perl hv key (fromIntegral klen)
+  return (frames, res)
+
+storeHV :: MonadIO m => HV -> CStringLen -> SV -> PerlT s m ()
+storeHV hv (key, klen) val = PerlT $ \perl frames -> liftIO $ do
+  ptrSv <- perl_hv_store perl hv key (fromIntegral klen) val
+  when (ptrSv /= nullPtr) $ svREFCNT_inc_void_NN val
+  return (frames, ())
+
+deleteHV :: MonadIO m => HV -> CStringLen -> PerlT s m (Maybe SV)
+deleteHV hv (key, klen) = PerlT $ \perl frames -> liftIO $ do
+  sv <- perl_hv_delete perl hv key (fromIntegral klen)
+  if sv == nullPtr
+    then return (frames, Nothing)
+    else return (frames, Just sv)
+
+------
 -- eval
 
 eval :: MonadIO m => CString -> PerlT s m SV
