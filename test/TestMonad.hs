@@ -12,6 +12,7 @@ import Perl.AsSV
 import Perl.AsRef
 import Perl.AV
 import Perl.HV
+import Perl.Embed
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
@@ -134,5 +135,18 @@ main = runPerlT $ do
 
   eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
   eval "{ echo 'CindyLinz is pretty' }"
+
+  defSub "incA" $ do
+    lift $ do
+      a <- readMySV "$a"
+      liftIO $ putStrLn $ "$a = " ++ show (a :: String)
+      writeMySV "$a"  (a ++ a)
+
+      svB <- mySV "$b"
+      b <- fromSV svB
+      liftIO $ putStrLn $ "$b = " ++ show (b :: Int)
+      setSV svB (b+1)
+    retSub ()
+  eval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
 
   return ()

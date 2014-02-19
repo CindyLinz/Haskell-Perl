@@ -227,3 +227,9 @@ foreign import ccall unsafe
 
 foreign import ccall unsafe
   set_sub_returns :: PtrPerl -> Ptr SV -> CInt -> IO()
+
+------
+-- embed
+
+foreign import ccall unsafe
+  perl_pad_peek_pvn :: PtrPerl -> CString -> StrLen -> IO SV

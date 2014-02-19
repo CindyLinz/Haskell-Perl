@@ -324,3 +324,18 @@ setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
   (a, b) <- getBounds returns
   withStorableArray returns $ \ptrReturns -> do
     set_sub_returns perl ptrReturns (fromIntegral (b - a + 1))
+
+------
+-- embed
+
+safeMySV :: MonadIO m => CStringLen -> PerlT s m (Maybe SV)
+safeMySV (name, namelen) = PerlT $ \perl frames -> liftIO $ do
+  sv <- perl_pad_peek_pvn perl name (fromIntegral namelen)
+  if sv == nullPtr
+    then return (frames, Nothing)
+    else return (frames, Just sv)
+
+mySV :: MonadIO m => CStringLen -> PerlT s m SV
+mySV (name, namelen) = PerlT $ \perl frames -> liftIO $ do
+  sv <- perl_pad_peek_pvn perl name (fromIntegral namelen)
+  return (frames, sv)
