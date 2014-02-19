@@ -26,6 +26,9 @@ import Perl.FromSV
 class HashKey k where
   withHashKey :: MonadIO m => k -> (forall s0. CStringLen -> PerlT s0 IO a) -> PerlT s m a
 
+instance HashKey CStringLen where
+  withHashKey key act = perlWithAnyIO ($ key) act
+
 instance HashKey String where
   withHashKey key act = perlWithAnyIO (withCStringLen key) act
 
