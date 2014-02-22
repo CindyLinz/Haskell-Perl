@@ -27,9 +27,7 @@ instance ToSV ToSVObj where
   setSV sv (ToSVObj a) = setSV sv a
 
 instance ToSV SV where
-  toSV sv = do
-    incRefCnt sv
-    return sv
+  toSV = newSVSV
   toSVMortal = newSVSVMortal
   setSV = setSVSV
 
