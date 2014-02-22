@@ -43,6 +43,11 @@ newSV = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSV perl 0
   return ((sv:frame):frames, sv)
 
+newSVSV :: MonadIO m => SV -> PerlT s m SV
+newSVSV sv = PerlT $ \perl (frame:frames) -> do
+  sv' <- liftIO $ perl_newSVsv perl sv
+  return ((sv':frame):frames, sv')
+
 newIntSV :: MonadIO m => IV -> PerlT s m SV
 newIntSV iv = PerlT $ \perl (frame:frames) -> do
   sv <- liftIO $ perl_newSViv perl iv

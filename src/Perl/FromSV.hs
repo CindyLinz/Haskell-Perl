@@ -12,15 +12,15 @@ import Perl.Type
 import Perl.Monad
 import Perl.MonadGlue
 
+-- | Copy out the value from a SV and then transform to the specified type
 class FromSV a where
-  fromSVNon :: MonadIO m => PerlT s m a
+  fromSVNon -- ^ Used when the SV is not existed. This one should be the same as when the SV is undef
+    :: MonadIO m => PerlT s m a
   fromSV :: MonadIO m => SV -> PerlT s m a
 
 instance FromSV SV where
   fromSVNon = newSV
-  fromSV sv = do
-    keepSV sv
-    return sv
+  fromSV = newSVSV
 
 instance FromSV Int where
   fromSVNon = return 0
@@ -44,7 +44,7 @@ refFromSVNon :: MonadIO m => PerlT s m (Ptr a)
 refFromSVNon = newSV >>= return . castPtr
 
 refFromSV :: MonadIO m => SV -> PerlT s m (Ptr a)
-refFromSV sv = keepSV sv >> (return $ castPtr sv)
+refFromSV sv = newSVSV sv >>= return . castPtr
 
 instance FromSV RefSV where
   fromSVNon = refFromSVNon
