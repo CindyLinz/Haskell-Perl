@@ -138,15 +138,26 @@ main = runPerlT $ do
 
   defSub "incA" $ do
     lift $ do
-      a <- readMySV "$a"
+      a <- readFindSV "$a"
       liftIO $ putStrLn $ "$a = " ++ show (a :: String)
-      writeMySV "$a"  (a ++ a)
+      writeFindSV "$a"  (a ++ a)
 
-      svB <- mySV "$b"
+      svB <- findSV "$b"
       b <- fromSV svB
       liftIO $ putStrLn $ "$b = " ++ show (b :: Int)
       setSV svB (b+1)
     retSub ()
   eval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
+
+  (defSub "anotherAdd" :: SubReturn ret => PerlSub s ret -> Perl s ()) $ do
+    res <- lift $ do
+      args <- findAV "@::_"
+      liftIO $ putStrLn $ show args
+      a <- readAV args 0
+      b <- readAV args 1
+      return (a + b :: Int)
+    return res
+
+  eval "sub add { my @a = @::_; anotherAdd() }; print '1 + 2 = ', add(1, 2), $/"
 
   return ()

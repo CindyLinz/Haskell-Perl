@@ -1,9 +1,13 @@
 {-# LANGUAGE Rank2Types, TypeSynonymInstances, FlexibleInstances #-}
 module Perl.Embed
-  ( readMySV
-  , writeMySV
-  , mySV
-  , safeMySV
+  ( readFindSV
+  , writeFindSV
+  , findSV
+  , safeFindSV
+  , findAV
+  , safeFindAV
+  , findHV
+  , safeFindHV
   ) where
 
 import Control.Monad
@@ -26,20 +30,32 @@ instance VarName CStringLen where
 instance VarName String where
   withVarName name act = perlWithAnyIO (withCStringLen name) act
 
-readMySV :: (VarName name, FromSV a, MonadIO m) => name -> PerlT s m a
-readMySV name = withVarName name $ \cName -> do
-  sv <- G.mySV cName
+readFindSV :: (VarName name, FromSV a, MonadIO m) => name -> PerlT s m a
+readFindSV name = withVarName name $ \cName -> do
+  sv <- G.findSV cName
   if sv == nullPtr
     then fromSVNon
     else fromSV sv
 
-writeMySV :: (VarName name, ToSV a, MonadIO m) => name -> a -> PerlT s m ()
-writeMySV name val = withVarName name $ \cName -> do
-  sv <- G.mySV cName
+writeFindSV :: (VarName name, ToSV a, MonadIO m) => name -> a -> PerlT s m ()
+writeFindSV name val = withVarName name $ \cName -> do
+  sv <- G.findSV cName
   when (sv /= nullPtr) $ setSV sv val
 
-mySV :: (VarName name, MonadIO m) => name -> PerlT s m SV
-mySV name = withVarName name $ \cName -> G.mySV cName
+findSV :: (VarName name, MonadIO m) => name -> PerlT s m SV
+findSV name = withVarName name $ \cName -> G.findSV cName
 
-safeMySV :: (VarName name, MonadIO m) => name -> PerlT s m (Maybe SV)
-safeMySV name = withVarName name $ \cName -> G.safeMySV cName
+safeFindSV :: (VarName name, MonadIO m) => name -> PerlT s m (Maybe SV)
+safeFindSV name = withVarName name $ \cName -> G.safeFindSV cName
+
+findAV :: (VarName name, MonadIO m) => name -> PerlT s m AV
+findAV name = withVarName name $ \cName -> G.findAV cName
+
+safeFindAV :: (VarName name, MonadIO m) => name -> PerlT s m (Maybe AV)
+safeFindAV name = withVarName name $ \cName -> G.safeFindAV cName
+
+findHV :: (VarName name, MonadIO m) => name -> PerlT s m HV
+findHV name = withVarName name $ \cName -> G.findHV cName
+
+safeFindHV :: (VarName name, MonadIO m) => name -> PerlT s m (Maybe HV)
+safeFindHV name = withVarName name $ \cName -> G.safeFindHV cName

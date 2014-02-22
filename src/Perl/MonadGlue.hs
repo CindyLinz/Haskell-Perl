@@ -328,14 +328,26 @@ setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
 ------
 -- embed
 
-safeMySV :: MonadIO m => CStringLen -> PerlT s m (Maybe SV)
-safeMySV (name, namelen) = PerlT $ \perl frames -> liftIO $ do
+safeFindSV :: MonadIO m => CStringLen -> PerlT s m (Maybe SV)
+safeFindSV (name, namelen) = PerlT $ \perl frames -> liftIO $ do
   sv <- perl_pad_peek_pvn perl name (fromIntegral namelen)
   if sv == nullPtr
     then return (frames, Nothing)
     else return (frames, Just sv)
 
-mySV :: MonadIO m => CStringLen -> PerlT s m SV
-mySV (name, namelen) = PerlT $ \perl frames -> liftIO $ do
+findSV :: MonadIO m => CStringLen -> PerlT s m SV
+findSV (name, namelen) = PerlT $ \perl frames -> liftIO $ do
   sv <- perl_pad_peek_pvn perl name (fromIntegral namelen)
   return (frames, sv)
+
+safeFindAV :: MonadIO m => CStringLen -> PerlT s m (Maybe AV)
+safeFindAV name = safeFindSV name >>= return . fmap castPtr
+
+findAV :: MonadIO m => CStringLen -> PerlT s m AV
+findAV name = findSV name >>= return . castPtr
+
+safeFindHV :: MonadIO m => CStringLen -> PerlT s m (Maybe HV)
+safeFindHV name = safeFindSV name >>= return . fmap castPtr
+
+findHV :: MonadIO m => CStringLen -> PerlT s m HV
+findHV name = findSV name >>= return . castPtr

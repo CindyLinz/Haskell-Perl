@@ -31,6 +31,7 @@ library
                      , Perl.AsSV
                      , Perl.Ref
                      , Perl.AsRef
+                     , Perl.Embed
                      , Perl.Monad.Exception
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
