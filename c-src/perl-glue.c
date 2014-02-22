@@ -3,6 +3,8 @@
 #include "perl-glue.h"
 
 #include <stdlib.h>
+#include <string.h>
+
 #ifdef TRACK_PERL_GLUE
 #include <stdio.h>
 #endif
@@ -163,12 +165,9 @@ SV *perl_hv_delete(pTHX_ HV *hv, const char *key, STRLEN klen){
 
 /* return: num of return values
  */
-I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
+I32 glue_call_sv(pTHX_ SV *sub_sv, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
     dSP;
     PUSHMARK(SP);
-#ifdef TRACK_PERL_GLUE
-    printf("glue_call_pv sub_name=%s, flags=%d, argc=%d, argv=%p, outv=%p\n", sub_name, flags, argc, (void*)argv, (void*)outv);
-#endif
     if( argc ){
         EXTEND(SP, argc);
         { I32 i; for(i=0; i<argc; ++i){
@@ -177,7 +176,7 @@ I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* 
         PUTBACK;
     }
     {
-        I32 count = call_pv(sub_name, flags);
+        I32 count = call_sv(sub_sv, flags);
         if( count > 0 ){
             SV **rets = *outv = (SV**) malloc(sizeof(SV*) * count);
             SPAGAIN;
@@ -196,6 +195,30 @@ I32 glue_call_pv(pTHX_ const char *sub_name, I32 flags, I32 argc, SV **argv, /* 
         return count;
     }
 }
+
+inline
+I32 glue_call_pv(pTHX_ const char *sub_name, STRLEN namelen, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
+    CV *sub_sv = get_cvn_flags(sub_name, namelen, 0);
+#ifdef TRACK_PERL_GLUE
+    printf("glue_call_pv sub_name=%s, flags=%d, argc=%d, argv=%p, outv=%p\n", sub_name, flags, argc, (void*)argv, (void*)outv);
+#endif
+    if( sub_sv==NULL ) {
+        char builtin_sub_name[namelen+18];
+        memcpy(builtin_sub_name,"HasPerl::builtin::", 18);
+        memcpy(builtin_sub_name+18, sub_name, namelen);
+        sub_sv = get_cvn_flags(builtin_sub_name, namelen+18, 0);
+        if( sub_sv==NULL ) {
+            dSP;
+            PUSHMARK(SP);
+            XPUSHs(sv_2mortal(newSVpvn(sub_name, namelen)));
+            PUTBACK;
+            call_sv((SV*)get_cvn_flags("HasPerl::make_builtin", 21, 0), G_VOID);
+        }
+        sub_sv = get_cvn_flags(builtin_sub_name, namelen+18, 0);
+    }
+    return glue_call_sv(aTHX_ (SV*)sub_sv, flags, argc, argv, outv);
+}
+
 
 static int haskell_cv_free(pTHX_ SV *cv, MAGIC *mg){
 #ifdef TRACK_PERL_GLUE

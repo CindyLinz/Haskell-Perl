@@ -41,7 +41,7 @@ class CallType r where
 callCommon :: MonadIO m => CInt -> (forall s1 m1. MonadIO m1 => [SV] -> PerlT s1 m1 [SV]) -> String -> PerlT s m (StorableArray Int SV)
 callCommon flag args name = scope $ do
   argList <- args []
-  res <- PerlT $ \perl frames -> liftIO $ withCString name $ \cName -> do
+  res <- PerlT $ \perl frames -> liftIO $ withCStringLen name $ \cName -> do
     argArray <- newListArray (1, length argList) argList
     unPerlT (G.callName cName flag argArray) perl frames
   return res

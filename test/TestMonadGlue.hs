@@ -37,7 +37,7 @@ perl = runPerlT $ do
     str <- peekCStringLen (pStr2, fromIntegral len2)
     putStrLn $ "pv = " ++ str
 
-  sinStr <- liftIO $ newCString "sin"
+  sinStr <- liftIO $ newCStringLen "sin"
   threeStr <- liftIO $ newCString "3"
   threeSV <- newStrSV threeStr 1
   liftIO $ free threeStr
@@ -45,7 +45,7 @@ perl = runPerlT $ do
   sinRet <- callName sinStr 0 sinArgs
   sinRet0 <- liftIO $ readArray sinRet 1
   sinRetNum <- svToNum sinRet0
-  liftIO $ free sinStr
+  liftIO $ free $ fst sinStr
   liftIO $ putStrLn $ show sinRetNum
 
   --subCV <- wrapSub (\perl cv -> putStrLn "Hello sub")
@@ -58,14 +58,14 @@ perl = runPerlT $ do
       liftIO $ putStrLn $ "  got: " ++ show i
       lift $ setSVInt elem (i+i)
     liftIO (newListArray (1,2) $ reverse argList) >>= setSubReturns
-  callStr <- liftIO $ newCString "call"
+  callStr <- liftIO $ newCStringLen "call"
   callArgList <- forM [3,4,5] newNumSV
   callArgs <- liftIO $ newListArray (1,4) (castPtr subCV : callArgList)
   callName callStr 0 callArgs
-  liftIO $ free callStr
+  liftIO $ free $ fst callStr
 
-  dieStr <- liftIO $ newCString "die"
+  dieStr <- liftIO $ newCStringLen "die"
   fptrNull <- liftIO $ newForeignPtr_ nullPtr
   emptyArgs <- liftIO $ unsafeForeignPtrToStorableArray fptrNull (1, 0)
   callName dieStr const_G_EVAL emptyArgs
-  liftIO $ free dieStr
+  liftIO $ free $ fst dieStr

@@ -151,13 +151,13 @@ main = runPerlT $ do
 
   (defSub "anotherAdd" :: SubReturn ret => PerlSub s ret -> Perl s ()) $ do
     res <- lift $ do
-      args <- findAV "@::_"
+      args <- findAV "@_"
       liftIO $ putStrLn $ show args
       a <- readAV args 0
       b <- readAV args 1
       return (a + b :: Int)
     return res
 
-  eval "sub add { my @a = @::_; anotherAdd() }; print '1 + 2 = ', add(1, 2), $/"
+  eval "our @_; sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/"
 
   return ()

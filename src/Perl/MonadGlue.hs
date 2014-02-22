@@ -292,19 +292,19 @@ callVar sv flag = PerlT $ \perl frames -> do
   a <- liftIO $ perl_call_sv perl sv flag
   return (frames, a)
 
-callName :: MonadIO m => CString -> CInt -> StorableArray Int SV -> PerlT s m (StorableArray Int SV)
-callName name flag args = PerlT $ \perl frames -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
+callName :: MonadIO m => CStringLen -> CInt -> StorableArray Int SV -> PerlT s m (StorableArray Int SV)
+callName (name, nameLen) flag args = PerlT $ \perl frames -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
   argc <- liftM (fromIntegral . rangeSize) (getBounds args)
-  outn <- glue_call_pv perl name flag argc ptrArg ptrPtrOut
+  outn <- glue_call_pv perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
   if outn == 0
     then do
       fptrNull <- newForeignPtr_ nullPtr
-      emptyArray <- unsafeForeignPtrToStorableArray fptrNull (fromIntegral 1, fromIntegral 0)
+      emptyArray <- unsafeForeignPtrToStorableArray fptrNull (1, 0)
       return (frames, emptyArray)
     else do
       ptrOut <- peek ptrPtrOut
       fptrOut <- newForeignPtr p_free ptrOut
-      outArray <- unsafeForeignPtrToStorableArray fptrOut (fromIntegral 1, fromIntegral outn)
+      outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn)
       return (frames, outArray)
 
 ------

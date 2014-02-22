@@ -205,7 +205,7 @@ foreign import ccall safe
   "Perl_call_pv" perl_call_pv :: PtrPerl -> CString -> CInt -> IO CInt
 
 foreign import ccall safe
-  glue_call_pv :: PtrPerl -> CString -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt
+  glue_call_pv :: PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt
 
 ------
 -- sub wrapper
