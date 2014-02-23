@@ -20,8 +20,7 @@ import Foreign.C.String
 import Perl.Type
 import Perl.Monad
 import qualified Perl.MonadGlue as G
-import Perl.ToSV
-import Perl.FromSV
+import Perl.SV
 
 class HashKey k where
   withHashKey :: MonadIO m => k -> (forall s0. CStringLen -> PerlT s0 IO a) -> PerlT s m a

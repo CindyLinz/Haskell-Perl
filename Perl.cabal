@@ -24,11 +24,9 @@ library
                      , Perl.Monad
                      , Perl.MonadGlue
                      , Perl.Glue
+                     , Perl.SV
                      , Perl.HV
                      , Perl.AV
-                     , Perl.ToSV
-                     , Perl.FromSV
-                     , Perl.AsSV
                      , Perl.Ref
                      , Perl.AsRef
                      , Perl.Embed

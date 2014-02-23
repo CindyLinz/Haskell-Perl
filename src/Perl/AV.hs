@@ -25,9 +25,7 @@ import Foreign.C.Types
 import Perl.Type
 import Perl.Monad
 import qualified Perl.MonadGlue as G
-import Perl.AsSV
-import Perl.ToSV
-import Perl.FromSV
+import Perl.SV
 
 class ToAV a where
   toAV :: MonadIO m => a -> PerlT s m AV

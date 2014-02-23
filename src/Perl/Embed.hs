@@ -17,8 +17,7 @@ import Foreign.Ptr
 
 import Perl.Type
 import Perl.Monad
-import Perl.FromSV
-import Perl.ToSV
+import Perl.SV
 import qualified Perl.MonadGlue as G
 
 class VarName name where

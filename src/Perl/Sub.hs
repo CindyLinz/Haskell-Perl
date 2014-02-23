@@ -10,8 +10,7 @@ import Data.Array.MArray
 
 import Perl.Type
 import Perl.Monad
-import Perl.ToSV
-import Perl.FromSV
+import Perl.SV
 import qualified Perl.MonadGlue as G
 
 class SubReturn a where

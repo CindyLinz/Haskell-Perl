@@ -2,13 +2,11 @@ module Main where
 
 import Perl.Monad
 import Perl.Eval
-import Perl.FromSV
-import Perl.ToSV
 import Perl.Call
 import Perl.Sub
 import Perl.Type
 import Perl.Ref
-import Perl.AsSV
+import Perl.SV
 import Perl.AsRef
 import Perl.AV
 import Perl.HV

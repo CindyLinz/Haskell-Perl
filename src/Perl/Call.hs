@@ -12,8 +12,7 @@ import Perl.Type
 import Perl.Constant
 import Perl.Monad
 import qualified Perl.MonadGlue as G
-import Perl.ToSV
-import Perl.FromSV
+import Perl.SV
 
 --class ToArgs a where
 --  toArgs :: a -> StorableArray Int SV
