@@ -1,13 +1,12 @@
 module Main where
 
-import Perl
 import Perl.Glue
 
 main = do
   putStrLn "Init..."
-  perl <- perlInit
+  perl <- init_perl
   putStrLn "  done."
 
   putStrLn "Exit..."
-  perlExit perl
+  exit_perl perl
   putStrLn "  done."

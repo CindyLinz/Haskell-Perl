@@ -52,18 +52,6 @@ executable test-bare
                      , array ==0.4.*
   extra-libraries:     perl
 
-executable test-eval
-  main-is:             TestEval.hs
-  hs-source-dirs:      test
-                     , src
-  cc-options:          -DTRACK_PERL_GLUE
-  c-sources:           c-src/perl-glue.c
-                     , c-src/mini-padwalker.c
-  build-depends:       base ==4.6.*
-                     , transformers ==0.3.*
-                     , array ==0.4.*
-  extra-libraries:     perl
-
 executable test-monad-glue
   main-is:             TestMonadGlue.hs
   hs-source-dirs:      test

@@ -19,7 +19,6 @@ main = defaultMainWithHooks simpleUserHooks
     return
       ( Just myBuildInfo
       , [ ("test-bare", myBuildInfo)
-        , ("test-eval", myBuildInfo)
         , ("test-monad", myBuildInfo)
         , ("test-monad-glue", myBuildInfo)
         ]
