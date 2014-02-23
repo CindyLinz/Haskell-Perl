@@ -7,7 +7,6 @@ import Perl.Sub
 import Perl.Type
 import Perl.Ref
 import Perl.SV
-import Perl.AsRef
 import Perl.AV
 import Perl.HV
 import Perl.Embed

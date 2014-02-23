@@ -28,7 +28,6 @@ library
                      , Perl.HV
                      , Perl.AV
                      , Perl.Ref
-                     , Perl.AsRef
                      , Perl.Embed
                      , Perl.Monad.Exception
   hs-source-dirs:      src
