@@ -125,16 +125,56 @@ instance (Retrievable r, MonadIO m) => CallType (PerlT s m r) where
         unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl frames
     retrieve res
 
-instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
-  collect args name svObj = collect
-    ( \later -> do
-      sv <- toSV svObj
-      args $ sv : later
-    ) name
+instance CallType r => CallType (SV -> r) where
+  collect args name sv = collect (args . (sv :)) name
+
+collectToSV :: (ToSV svObj, CallType r) => (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> svObj -> r
+collectToSV args name svObj = collect
+  ( \later -> do
+    sv <- toSV svObj
+    args $ sv : later
+  ) name
+instance CallType r => CallType (Int -> r) where
+  collect = collectToSV
+instance CallType r => CallType (Double -> r) where
+  collect = collectToSV
+instance CallType r => CallType (String -> r) where
+  collect = collectToSV
+instance CallType r => CallType (RefSV -> r) where
+  collect = collectToSV
+instance CallType r => CallType (RefAV -> r) where
+  collect = collectToSV
+instance CallType r => CallType (RefHV -> r) where
+  collect = collectToSV
+instance CallType r => CallType (RefCV -> r) where
+  collect = collectToSV
+
+instance CallType r => CallType ([SV] -> r) where
+  collect args name svs = collect (args . (svs ++)) name
+
+collectToSVList :: (ToSV svObj, CallType r) => (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> [svObj] -> r
+collectToSVList args name svObjs = collect
+  ( \later -> do
+    svs <- mapM toSV svObjs
+    args $ svs ++ later
+  ) name
+instance CallType r => CallType ([Int] -> r) where
+  collect = collectToSVList
+instance CallType r => CallType ([Double] -> r) where
+  collect = collectToSVList
+instance CallType r => CallType ([String] -> r) where
+  collect = collectToSVList
+instance CallType r => CallType ([RefSV] -> r) where
+  collect = collectToSVList
+instance CallType r => CallType ([RefAV] -> r) where
+  collect = collectToSVList
+instance CallType r => CallType ([RefHV] -> r) where
+  collect = collectToSVList
+instance CallType r => CallType ([RefCV] -> r) where
+  collect = collectToSVList
 
 call :: CallType r => String -> r
 call name = collect return name
 
 noRet :: MonadIO m => PerlT s m () -> PerlT s m ()
 noRet = id
-
