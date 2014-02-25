@@ -116,41 +116,13 @@ instance Retrievable b => PerlEvalable String b where
 class CallType r where
   collect :: (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> r
 
-callCommon :: MonadIO m => CInt -> (forall s1 m1. MonadIO m1 => [SV] -> PerlT s1 m1 [SV]) -> String -> PerlT s m (StorableArray Int SV)
-callCommon flag args name = scope $ do
-  argList <- args []
-  res <- PerlT $ \perl frames -> liftIO $ withCStringLen name $ \cName -> do
-    argArray <- newListArray (1, length argList) argList
-    unPerlT (G.callName cName flag argArray) perl frames
-  return res
-
-callScalarCommon :: (FromSV a, MonadIO m) => (forall s1 m1. MonadIO m1 => [SV] -> PerlT s1 m1 [SV]) -> String -> PerlT s m a
-callScalarCommon args name = do
-  resArray <- callCommon const_G_SCALAR args name
-  resSV <- liftIO $ readArray resArray 1
-  fromSV resSV
-
-callListCommon :: (FromSV a, MonadIO m) => (forall s1 m1. MonadIO m1 => [SV] -> PerlT s1 m1 [SV]) -> String -> PerlT s m [a]
-callListCommon args name = do
-  resArray <- callCommon const_G_ARRAY args name
-  resSVList <- liftIO $ getElems resArray
-  mapM fromSV resSVList
-
-instance MonadIO m => CallType (PerlT s m (StorableArray Int SV)) where
-  collect = callCommon const_G_ARRAY
-
-instance MonadIO m => CallType (PerlT s m ()) where
-  collect args name = callCommon const_G_VOID args name >> return ()
-
-instance MonadIO m => CallType (PerlT s m SV) where collect = callScalarCommon
-instance MonadIO m => CallType (PerlT s m Int) where collect = callScalarCommon
-instance MonadIO m => CallType (PerlT s m Double) where collect = callScalarCommon
-instance MonadIO m => CallType (PerlT s m String) where collect = callScalarCommon
-
-instance MonadIO m => CallType (PerlT s m [SV]) where collect = callListCommon
-instance MonadIO m => CallType (PerlT s m [Int]) where collect = callListCommon
-instance MonadIO m => CallType (PerlT s m [Double]) where collect = callListCommon
-instance MonadIO m => CallType (PerlT s m [String]) where collect = callListCommon
+instance (Retrievable r, MonadIO m) => CallType (PerlT s m r) where
+  collect args name = scope $ do
+    argList <- args []
+    res <- PerlT $ \perl frames -> liftIO $ withCStringLen name $ \cName -> do
+      argArray <- newListArray (1, length argList) argList
+      unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl frames
+    retrieve res
 
 instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
   collect args name svObj = collect
