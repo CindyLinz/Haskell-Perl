@@ -117,11 +117,12 @@ class CallType r where
   collect :: (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> r
 
 instance (Retrievable r, MonadIO m) => CallType (PerlT s m r) where
-  collect args name = scope $ do
-    argList <- args []
-    res <- PerlT $ \perl frames -> liftIO $ withCStringLen name $ \cName -> do
-      argArray <- newListArray (1, length argList) argList
-      unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl frames
+  collect args name = do
+    res <- scope $ do
+      argList <- args []
+      PerlT $ \perl frames -> liftIO $ withCStringLen name $ \cName -> do
+        argArray <- newListArray (1, length argList) argList
+        unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl frames
     retrieve res
 
 instance (ToSV svObj, CallType r) => CallType (svObj -> r) where
