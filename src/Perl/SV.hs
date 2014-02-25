@@ -1,9 +1,12 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances, ExistentialQuantification #-}
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances, ExistentialQuantification, Rank2Types #-}
 module Perl.SV
   where
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.IO.Class
+
+import Data.Array.MArray
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -18,6 +21,14 @@ class FromSV a where
   fromSVNon -- ^ Used when the SV is not existed. This one should be the same as when the SV is undef
     :: MonadIO m => PerlT s m a
   fromSV :: MonadIO m => SV -> PerlT s m a
+
+  -- ^ extract the LAST SV of an SVArray
+  fromSVArray :: MonadIO m => SVArray -> PerlT s m a
+  fromSVArray svArray = do
+    lastIndex <- liftIO $ snd <$> getBounds svArray
+    if lastIndex > 0
+      then fromSV =<< liftIO (readArray svArray lastIndex)
+      else fromSVNon
 
 instance FromSV SV where
   fromSVNon = newSV

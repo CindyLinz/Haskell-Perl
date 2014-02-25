@@ -20,13 +20,14 @@ main = do
 
 
 perl = runPerlT $ do
-  cmd1 <- liftIO $ newCString "sub call { my $func = shift; @res = $func->(@_); print qq( res: @res$/) } print 'Hi ', rand 10, ' ', sin(3), $/"
-  eval cmd1
-  liftIO $ free cmd1
+  cmd1 <- liftIO $ newCStringLen "sub call { my $func = shift; @res = $func->(@_); print qq( res: @res$/) } print 'Hi ', rand 10, ' ', sin(3), $/"
+  eval cmd1 const_G_VOID
+  liftIO $ free $ fst cmd1
 
-  cmd2 <- liftIO $ newCString "use Scalar::Util qw(dualvar); dualvar 3.5, '^_^'"
-  res2 <- eval cmd2
-  liftIO $ free cmd2
+  cmd2 <- liftIO $ newCStringLen "use Scalar::Util qw(dualvar); dualvar 3.5, '^_^'"
+  res2arr <- eval cmd2 const_G_SCALAR
+  res2 <- liftIO $ readArray res2arr 1
+  liftIO $ free $ fst cmd2
 
   iv2 <- svToInt res2
   nv2 <- svToNum res2

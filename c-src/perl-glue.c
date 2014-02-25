@@ -54,13 +54,6 @@ void exit_perl(pTHX){
         very_exit_perl();
 }
 
-SV *glue_eval_pv(pTHX_ const char *p, I32 croak_on_error){
-#ifdef TRACK_PERL_GLUE
-    printf("glue_eval_pv(%p)\n", (void*)aTHX);
-#endif
-    return eval_pv(p, croak_on_error);
-}
-
 /* ref count */
 
 U32 svREFCNT(SV *sv){
@@ -161,7 +154,42 @@ SV *perl_hv_delete(pTHX_ HV *hv, const char *key, STRLEN klen){
     return hv_delete(hv, key, klen, 0);
 }
 
-/* call */
+/* eval or call */
+
+void handle_returns(pTHX_ I32 count, /* out */SV ***outv){
+    dSP;
+
+    SV **rets = *outv = (SV**) malloc(sizeof(SV*) * count);
+    SPAGAIN;
+    { I32 i; for(i=count-1; i>=0; --i){
+#ifdef TRACK_PERL_GLUE
+        double n;
+#endif
+        rets[i] = POPs;
+#ifdef TRACK_PERL_GLUE
+        n = SvNVx(rets[i]);
+        printf("prepare return %d NV=%f\n", i, n);
+#endif
+    } }
+    PUTBACK;
+}
+
+I32 glue_eval_sv(pTHX_ SV *sv, I32 flags, /* out */SV ***outv){
+    I32 count = eval_sv(sv, flags);
+    if( count > 0 )
+        handle_returns(aTHX_ count, outv);
+    return count;
+}
+
+I32 glue_eval_pv(pTHX_ const char *code, STRLEN codelen, I32 flags, /* out */SV ***outv){
+    dVAR;
+    SV *sv = newSVpv(code, codelen);
+    I32 count = eval_sv(sv, flags);
+    SvREFCNT_dec(sv);
+    if( count > 0 )
+        handle_returns(aTHX_ count, outv);
+    return count;
+}
 
 /* return: num of return values
  */
@@ -177,21 +205,8 @@ I32 glue_call_sv(pTHX_ SV *sub_sv, I32 flags, I32 argc, SV **argv, /* out */SV *
     }
     {
         I32 count = call_sv(sub_sv, flags);
-        if( count > 0 ){
-            SV **rets = *outv = (SV**) malloc(sizeof(SV*) * count);
-            SPAGAIN;
-            { I32 i; for(i=count-1; i>=0; --i){
-#ifdef TRACK_PERL_GLUE
-                double n;
-#endif
-                rets[i] = POPs;
-#ifdef TRACK_PERL_GLUE
-                n = SvNVx(rets[i]);
-                printf("prepare return %d NV=%f\n", i, n);
-#endif
-            } }
-            PUTBACK;
-        }
+        if( count > 0 )
+            handle_returns(aTHX_ count, outv);
         return count;
     }
 }

@@ -196,7 +196,10 @@ foreign import ccall safe
 -- eval
 
 foreign import ccall safe
-  "Perl_eval_pv" perl_eval_pv :: PtrPerl -> CString -> CInt -> IO SV
+  glue_eval_sv :: PtrPerl -> SV -> CInt -> Ptr (Ptr SV) -> IO CInt
+
+foreign import ccall safe
+  glue_eval_pv :: PtrPerl -> CString -> StrLen -> CInt -> Ptr (Ptr SV) -> IO CInt
 
 ------
 -- call

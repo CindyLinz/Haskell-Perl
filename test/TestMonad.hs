@@ -97,7 +97,7 @@ main = runPerlT $ do
       liftIO $ putStrLn $ "before clear: " ++ show e1 ++ ", after clear: " ++ show e2
     retSub ()
 
-  eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
+  () <- eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
 
   defSub "defAscii" $ do
     hvRef <- lift $ do
@@ -130,8 +130,8 @@ main = runPerlT $ do
     liftIO $ putStrLn str
     retSub ()
 
-  eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
-  eval "{ echo 'CindyLinz is pretty' }"
+  () <- eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
+  () <- eval "{ echo 'CindyLinz is pretty' }"
 
   defSub "incA" $ do
     lift $ do
@@ -144,7 +144,7 @@ main = runPerlT $ do
       liftIO $ putStrLn $ "$b = " ++ show (b :: Int)
       setSV svB (b+1)
     retSub ()
-  eval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
+  voidEval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
 
   (defSub "anotherAdd" :: SubReturn ret => PerlSub s ret -> Perl s ()) $ do
     res <- lift $ do
@@ -155,6 +155,7 @@ main = runPerlT $ do
       return (a + b :: Int)
     return res
 
-  eval "our @_; sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/"
+  intListRes <- eval "our @_; sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
+  liftIO $ putStrLn $ show (intListRes :: [Int])
 
   return ()

@@ -20,8 +20,6 @@ import Perl.Type
 import Perl.Monad
 import Perl.SV
 
-type SVArray = StorableArray Int SV
-
 newtype SVArrayBuilder = SVArrayBuilder { unSVArrayBuilder :: [ToSVObj] -> [ToSVObj] }
 newtype SVArrayBreaker s m = SVArrayBreaker { unSVArrayBreaker :: [[SV] -> PerlT s m [SV]] -> [[SV] -> PerlT s m [SV]] }
 

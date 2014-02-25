@@ -12,6 +12,7 @@ import Foreign.Marshal.Array
 import Control.Monad
 import Control.Monad.IO.Class
 
+import Data.Array.MArray
 import Data.Array.Storable hiding (unsafeForeignPtrToStorableArray)
 import Data.Array.Unsafe
 import Data.Ix
@@ -169,7 +170,7 @@ newAVEmpty = PerlT $ \perl (frame:frames) -> do
   a <- liftIO $ perl_newAV perl
   return ((castPtr a:frame):frames, a)
 
-newAV :: MonadIO m => StorableArray Int SV -> PerlT s m AV
+newAV :: MonadIO m => SVArray -> PerlT s m AV
 newAV arr = PerlT $ \perl (frame:frames) -> liftIO $ do
   withStorableArray arr $ \ptrAs -> do
     (lower, upper) <- getBounds arr
@@ -284,10 +285,18 @@ deleteHV hv (key, klen) = PerlT $ \perl frames -> liftIO $ do
 ------
 -- eval
 
-eval :: MonadIO m => CString -> PerlT s m SV
-eval code = PerlT $ \perl frames -> do
-  a <- liftIO $ perl_eval_pv perl code 1
-  return (frames, a)
+eval :: MonadIO m => CStringLen -> CInt -> PerlT s m SVArray
+eval (code, codeLen) flags = PerlT $ \perl frames -> liftIO $ alloca $ \ptrPtrOut -> do
+  outn <- glue_eval_pv perl code (fromIntegral codeLen) flags ptrPtrOut
+  if outn == 0
+    then do
+      emptyArray <- newArray_ (1, 0)
+      return (frames, emptyArray)
+    else do
+      ptrOut <- peek ptrPtrOut
+      fptrOut <- newForeignPtr p_free ptrOut
+      outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn)
+      return (frames, outArray)
 
 ------
 -- call
@@ -297,14 +306,13 @@ callVar sv flag = PerlT $ \perl frames -> do
   a <- liftIO $ perl_call_sv perl sv flag
   return (frames, a)
 
-callName :: MonadIO m => CStringLen -> CInt -> StorableArray Int SV -> PerlT s m (StorableArray Int SV)
+callName :: MonadIO m => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
 callName (name, nameLen) flag args = PerlT $ \perl frames -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
   argc <- liftM (fromIntegral . rangeSize) (getBounds args)
   outn <- glue_call_pv perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
   if outn == 0
     then do
-      fptrNull <- newForeignPtr_ nullPtr
-      emptyArray <- unsafeForeignPtrToStorableArray fptrNull (1, 0)
+      emptyArray <- newArray_ (1, 0)
       return (frames, emptyArray)
     else do
       ptrOut <- peek ptrPtrOut
@@ -315,7 +323,7 @@ callName (name, nameLen) flag args = PerlT $ \perl frames -> liftIO . withStorab
 ------
 -- sub
 
-getSubArgs :: MonadIO m => PerlSubT s m (StorableArray Int SV)
+getSubArgs :: MonadIO m => PerlSubT s m SVArray
 getSubArgs = PerlSubT $ \perl cv -> liftIO $ do
   items <- get_sub_arg_num perl
   args <- newArray_ (1, fromIntegral items)
@@ -324,7 +332,7 @@ getSubArgs = PerlSubT $ \perl cv -> liftIO $ do
   return args
 
 -- must be the last step in the sub that modify the perl stack
-setSubReturns :: MonadIO m => StorableArray Int SV -> PerlSubT s m ()
+setSubReturns :: MonadIO m => SVArray -> PerlSubT s m ()
 setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
   (a, b) <- getBounds returns
   withStorableArray returns $ \ptrReturns -> do

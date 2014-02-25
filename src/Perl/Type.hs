@@ -2,6 +2,8 @@
 module Perl.Type
   where
 
+import Data.Array.Storable
+
 import Foreign
 import Foreign.C.Types
 import Foreign.C.String
@@ -36,3 +38,6 @@ type RefHV = Ptr RHV_
 
 data RCV_
 type RefCV = Ptr RCV_
+
+type SVArray = StorableArray Int SV
+
