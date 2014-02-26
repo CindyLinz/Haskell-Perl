@@ -94,11 +94,8 @@ SV *newSVnv_mortal(pTHX_ NV n){
     return sv_2mortal(newSVnv(n));
 }
 
-void glue_sv_setpvn(pTHX_ SV *sv, const char *str, const STRLEN len){
-#ifdef TRACK_PERL_GLUE
-    printf("glue_sv_setpvn(%p)\n", (void*)aTHX);
-#endif
-    sv_setpvn(sv, str, len);
+void perl_sv_setundef(pTHX_ SV *sv){
+    sv_setsv(sv, &PL_sv_undef);
 }
 
 IV svIVx(pTHX_ SV *sv){

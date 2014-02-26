@@ -85,6 +85,9 @@ foreign import ccall unsafe
 -- write SV
 
 foreign import ccall safe
+  perl_sv_setundef :: PtrPerl -> SV -> IO ()
+
+foreign import ccall safe
   "Perl_sv_setiv_mg" perl_sv_setiv_mg :: PtrPerl -> SV -> IV -> IO ()
 
 foreign import ccall safe

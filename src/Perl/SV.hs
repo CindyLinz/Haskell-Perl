@@ -98,6 +98,11 @@ instance ToSV SV where
   toSVMortal = newSVSVMortal
   setSV = setSVSV
 
+instance ToSV () where
+  toSV _ = newSV
+  toSVMortal _ = newSVMortal
+  setSV sv _ = setSVUndef sv
+
 instance ToSV Int where
   toSV n = newIntSV (fromIntegral n)
   toSVMortal n = newIntSVMortal (fromIntegral n)

@@ -112,6 +112,11 @@ svToStr sv = PerlT $ \perl frames -> liftIO $ alloca $ \ptrLen -> do
 ------
 -- write SV
 
+setSVUndef :: MonadIO m => SV -> PerlT s m ()
+setSVUndef sv = PerlT $ \perl frames -> do
+  liftIO $ perl_sv_setundef perl sv
+  return (frames, ())
+
 setSVInt :: MonadIO m => SV -> IV -> PerlT s m ()
 setSVInt sv a = PerlT $ \perl frames -> do
   liftIO $ perl_sv_setiv_mg perl sv a
