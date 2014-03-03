@@ -231,6 +231,13 @@ I32 glue_call_pv(pTHX_ const char *sub_name, STRLEN namelen, I32 flags, I32 argc
     return glue_call_sv(aTHX_ (SV*)sub_sv, flags, argc, argv, outv);
 }
 
+SV *glue_get_error(pTHX){
+    if( SvTRUE(ERRSV) )
+        return ERRSV;
+    else
+        return NULL;
+}
+
 
 static int haskell_cv_free(pTHX_ SV *cv, MAGIC *mg){
 #ifdef TRACK_PERL_GLUE

@@ -1,12 +1,21 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, DeriveDataTypeable #-}
 -- |
 -- Provide some functions when you need to define generic exception handling functions
 module Perl.Monad.Exception
   ( perlMask
   , perlCatch
+  , PerlException (..)
+  , Exception (..)
   ) where
 
+import Control.Exception
+
+import Data.Typeable
+
 import Perl.Monad
+
+data PerlException = PerlException String deriving (Show, Typeable)
+instance Exception PerlException where
 
 {- * Helper for Generic exception monad
 

@@ -303,6 +303,13 @@ eval (code, codeLen) flags = PerlT $ \perl frames -> liftIO $ alloca $ \ptrPtrOu
       outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn)
       return (frames, outArray)
 
+getEvalError :: MonadIO m => PerlT s m (Maybe SV)
+getEvalError = PerlT $ \perl frames -> do
+  sv <- liftIO $ glue_get_error perl
+  if sv == nullPtr
+    then return (frames, Nothing)
+    else return (frames, Just sv)
+
 ------
 -- call
 

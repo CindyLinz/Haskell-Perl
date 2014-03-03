@@ -7,6 +7,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 
 import Data.Array.Storable
+import Data.Bits
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -101,17 +102,25 @@ instance Retrievable [RefCV] where
   retrieve = retrieveFromSVList
 
 class Retrievable b => PerlEvalable a b where
-  eval :: MonadIO m => a -> PerlT s m b
-voidEval :: (MonadIO m, PerlEvalable a ()) => a -> PerlT s m ()
+  eval :: MonadIO m => a -> PerlT s m (Either String b)
+voidEval :: (MonadIO m, PerlEvalable a ()) => a -> PerlT s m (Either String ())
 voidEval = eval
 
+evalCore :: forall s m b. (MonadIO m, Retrievable b) => CStringLen -> PerlT s m (Either String b)
+evalCore code = do
+  res <- G.eval code (const_G_EVAL .|. (contextConstant $ context (undefined :: b)))
+  err <- G.getEvalError
+  case err of
+    Just errSV -> fromSV errSV >>= return . Left
+    _ -> retrieve res >>= return . Right
+
 instance Retrievable b => PerlEvalable CStringLen b where
-  eval code = retrieve =<< G.eval code (contextConstant $ context (undefined :: b))
+  eval = evalCore
 
 instance Retrievable b => PerlEvalable String b where
   eval str = PerlT $ \perl frames ->
     liftIO $ withCStringLen str $ \cstrlen ->
-      unPerlT (retrieve =<< G.eval cstrlen (contextConstant $ context (undefined :: b))) perl frames
+      unPerlT (evalCore cstrlen) perl frames
 
 class CallType r where
   collect :: (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> r
