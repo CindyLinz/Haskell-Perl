@@ -1,6 +1,16 @@
 {-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, ScopedTypeVariables, Rank2Types, FlexibleContexts, ExistentialQuantification, OverlappingInstances #-}
 module Perl.Sub
-  where
+  ( G.getSubContext
+  , SubReturn (..)
+  , SubReturnObj
+  , retSub
+  , Subable (..)
+  , sub
+  , subDo
+  , defSub
+  ) where
+
+import Data.Array.MArray
 
 import Control.Monad
 import Control.Monad.Trans.Class

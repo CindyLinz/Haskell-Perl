@@ -237,6 +237,9 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   set_sub_returns :: PtrPerl -> Ptr SV -> CInt -> IO ()
 
+foreign import ccall unsafe
+  get_sub_context :: PtrPerl -> IO CInt
+
 ------
 -- embed
 

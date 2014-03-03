@@ -56,6 +56,8 @@ main = runPerlT $ do
   liftIO $ putStrLn $ "res132 = " ++ show (res132 :: [String])
 
   defSub "my_test_add3" $ \a b c -> do
+    context <- getSubContext
+    liftIO $ putStrLn $ "my_test_add3 context=" ++ show context
     liftIO $ putStrLn $ "a = " ++ show a ++ ", b = " ++ show b ++ ", c = " ++ show c
     retSub (a + b + c :: Double)
 
@@ -136,6 +138,8 @@ main = runPerlT $ do
   () <- eval "{ echo 'CindyLinz is pretty' }"
 
   defSub "incA" $ do
+    context <- getSubContext
+    liftIO $ putStrLn $ "incA context=" ++ show context
     lift $ do
       a <- readFindSV "$a"
       liftIO $ putStrLn $ "$a = " ++ show (a :: String)
@@ -149,6 +153,8 @@ main = runPerlT $ do
   voidEval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
 
   (defSub "anotherAdd" :: SubReturn ret => PerlSub s ret -> Perl s ()) $ do
+    context <- getSubContext
+    liftIO $ putStrLn $ "anotherAdd context=" ++ show context
     res <- lift $ do
       args <- findAV "@_"
       liftIO $ putStrLn $ show args

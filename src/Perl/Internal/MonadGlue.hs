@@ -343,6 +343,9 @@ setSubReturns returns = PerlSubT $ \perl cv -> liftIO $ do
   withStorableArray returns $ \ptrReturns -> do
     set_sub_returns perl ptrReturns (fromIntegral (b - a + 1))
 
+getSubContext :: MonadIO m => PerlSubT s m CInt
+getSubContext = PerlSubT $ \perl cv -> liftIO $ get_sub_context perl
+
 ------
 -- embed
 

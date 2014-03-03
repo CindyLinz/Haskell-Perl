@@ -289,3 +289,7 @@ void set_sub_returns(pTHX_ SV** ret_buffer, I32 items){
         PL_stack_base[ax+i] = ret_buffer[i];
     PL_stack_sp = PL_stack_base + ax + items - 1;
 }
+
+I32 get_sub_context(pTHX){
+    return GIMME_V;
+}
