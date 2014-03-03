@@ -1,4 +1,4 @@
-module Perl.MonadGlue
+module Perl.Internal.MonadGlue
   where
 
 import Foreign
@@ -19,7 +19,7 @@ import Data.Ix
 
 import Perl.Type
 import Perl.Constant
-import Perl.Glue
+import Perl.Internal.Glue
 import Perl.Monad
 
 ------

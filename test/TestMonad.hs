@@ -1,5 +1,13 @@
 module Main where
 
+import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.IO.Class
+
+import Data.Char
+
+import Foreign.Ptr
+
 import Perl.Monad
 import Perl.Eval
 import Perl.Call
@@ -10,12 +18,6 @@ import Perl.SV
 import Perl.AV
 import Perl.HV
 import Perl.Embed
-import Control.Monad
-import Control.Monad.Trans.Class
-import Control.Monad.IO.Class
-
-import Foreign.Ptr
-import Data.Char
 
 main = runPerlT $ do
   res <- eval $

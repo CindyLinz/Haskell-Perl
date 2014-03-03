@@ -1,6 +1,6 @@
 module Main where
 
-import Perl.Glue
+import Perl.Internal.Glue
 
 main = do
   putStrLn "Init..."

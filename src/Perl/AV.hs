@@ -19,12 +19,14 @@ module Perl.AV
 
 import Control.Monad
 import Control.Monad.IO.Class
+
 import Data.Array.Storable
+
 import Foreign.C.Types
 
 import Perl.Type
 import Perl.Monad
-import qualified Perl.MonadGlue as G
+import qualified Perl.Internal.MonadGlue as G
 import Perl.SV
 
 class ToAV a where

@@ -5,13 +5,13 @@ module Perl.Sub
 import Control.Monad
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
+
 import Foreign.C.String
-import Data.Array.MArray
 
 import Perl.Type
 import Perl.Monad
 import Perl.SV
-import qualified Perl.MonadGlue as G
+import qualified Perl.Internal.MonadGlue as G
 
 class SubReturn a where
   returnSub :: a -> PerlSub s ()

@@ -15,11 +15,12 @@ module Perl.HV
   ) where
 
 import Control.Monad.IO.Class
+
 import Foreign.C.String
 
 import Perl.Type
 import Perl.Monad
-import qualified Perl.MonadGlue as G
+import qualified Perl.Internal.MonadGlue as G
 import Perl.SV
 
 class HashKey k where

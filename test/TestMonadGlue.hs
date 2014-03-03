@@ -1,17 +1,20 @@
 module Main where
 
-import Perl.Constant
-import Perl.Monad
-import Perl.MonadGlue
+import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.IO.Class
+
+import Data.Array.Unsafe
+import Data.Array.MArray
+
 import Foreign.C.String
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 import Foreign.Ptr
-import Control.Monad
-import Control.Monad.Trans.Class
-import Control.Monad.IO.Class
-import Data.Array.Unsafe
-import Data.Array.MArray
+
+import Perl.Constant
+import Perl.Monad
+import Perl.Internal.MonadGlue
 
 main = do
   putStrLn "test begin."

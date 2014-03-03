@@ -19,18 +19,19 @@ library
   exposed-modules:     Perl
                      , Perl.Type
                      , Perl.Constant
+                     , Perl.Monad
                      , Perl.Sub
                      , Perl.Call
                      , Perl.Eval
-                     , Perl.Monad
-                     , Perl.MonadGlue
-                     , Perl.Glue
                      , Perl.SV
                      , Perl.HV
                      , Perl.AV
                      , Perl.Ref
                      , Perl.Embed
+                     , Perl.Internal.Glue
+                     , Perl.Internal.MonadGlue
                      , Perl.Monad.Exception
+                     --, Perl.Lens
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
                      , c-src/mini-padwalker.c

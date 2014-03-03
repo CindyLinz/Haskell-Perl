@@ -12,13 +12,14 @@ module Perl.Embed
 
 import Control.Monad
 import Control.Monad.IO.Class
+
 import Foreign.C.String
 import Foreign.Ptr
 
 import Perl.Type
 import Perl.Monad
 import Perl.SV
-import qualified Perl.MonadGlue as G
+import qualified Perl.Internal.MonadGlue as G
 
 class VarName name where
   withVarName :: MonadIO m => name -> (forall s0. CStringLen -> PerlT s0 IO a) -> PerlT s m a

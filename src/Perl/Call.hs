@@ -15,7 +15,7 @@ import Perl.Type
 import Perl.Constant
 import Perl.Monad
 import Perl.SV
-import qualified Perl.MonadGlue as G
+import qualified Perl.Internal.MonadGlue as G
 
 data Context
   = VoidContext

@@ -14,7 +14,7 @@ import Foreign.Ptr
 
 import Perl.Type
 import Perl.Monad
-import Perl.MonadGlue
+import Perl.Internal.MonadGlue
 
 -- | Copy out the value from a SV and then transform to the specified type
 class FromSV a where

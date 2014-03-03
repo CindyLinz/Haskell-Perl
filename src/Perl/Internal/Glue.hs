@@ -1,5 +1,5 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
-module Perl.Glue
+module Perl.Internal.Glue
   where
 
 import Foreign
@@ -235,7 +235,7 @@ foreign import ccall unsafe
   get_sub_args :: PtrPerl -> Ptr SV -> CInt -> IO ()
 
 foreign import ccall unsafe
-  set_sub_returns :: PtrPerl -> Ptr SV -> CInt -> IO()
+  set_sub_returns :: PtrPerl -> Ptr SV -> CInt -> IO ()
 
 ------
 -- embed

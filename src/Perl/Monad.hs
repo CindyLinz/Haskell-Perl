@@ -1,6 +1,10 @@
-{-# LANGUAGE Rank2Types, MultiParamTypeClasses #-}
+{-# LANGUAGE Rank2Types, MultiParamTypeClasses, FunctionalDependencies, FlexibleInstances #-}
 module Perl.Monad
   where
+
+import Control.Monad
+import Control.Monad.Trans.Class
+import Control.Monad.IO.Class
 
 import Foreign
 import Foreign.C.Types
@@ -9,12 +13,8 @@ import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
 
-import Control.Monad
-import Control.Monad.Trans.Class
-import Control.Monad.IO.Class
-
 import Perl.Type
-import Perl.Glue
+import Perl.Internal.Glue
 
 type ScopeFrame = [SV]
 emptyFrame = []

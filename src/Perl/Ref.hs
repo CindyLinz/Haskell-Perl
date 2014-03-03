@@ -10,7 +10,7 @@ import Foreign.C.Types
 import Perl.Type
 import Perl.Constant
 import Perl.Monad
-import Perl.MonadGlue
+import Perl.Internal.MonadGlue
 
 class Refable a b | a -> b, b -> a where
   newRef :: MonadIO m => a -> PerlT s m b
