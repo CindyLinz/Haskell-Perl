@@ -223,13 +223,13 @@ foreign import ccall unsafe
 -- sub wrapper
 
 foreign import ccall unsafe
-  "wrapper" wrap_sub_wrapper :: (PtrPerl -> CV -> IO ()) -> IO (FunPtr (PtrPerl -> CV -> IO ()))
+  "wrapper" wrap_sub_wrapper :: (PtrPerl -> CV -> IO SV) -> IO (FunPtr (PtrPerl -> CV -> IO SV))
 
 foreign import ccall unsafe
-  wrap_sub :: PtrPerl -> FunPtr (PtrPerl -> CV -> IO ()) -> IO RefCV
+  wrap_sub :: PtrPerl -> FunPtr (PtrPerl -> CV -> IO SV) -> IO RefCV
 
 foreign import ccall safe
-  reg_sub :: PtrPerl -> CString -> FunPtr (PtrPerl -> CV -> IO ()) -> IO ()
+  reg_sub :: PtrPerl -> CString -> FunPtr (PtrPerl -> CV -> IO SV) -> IO ()
 
 foreign import ccall unsafe
   get_sub_arg_num :: PtrPerl -> IO CInt

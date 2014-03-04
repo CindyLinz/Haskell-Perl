@@ -252,11 +252,15 @@ static MGVTBL haskell_cv_vtbl = {
     haskell_cv_free
 };
 
+typedef SV* (*HSUBADDR_t) (pTHX_ CV*);
+
 void perl_to_haskell_wrapper(pTHX_ CV *cv){
-    ((XSUBADDR_t)CvXSUBANY(cv).any_ptr)(aTHX_ cv);
+    SV *err = ((HSUBADDR_t)CvXSUBANY(cv).any_ptr)(aTHX_ cv);
+    if( err )
+        croak_sv(err);
 }
 
-SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
+SV *wrap_sub(pTHX_ HSUBADDR_t subaddr){
     SV *cv_ref;
     CV *cv = MUTABLE_CV(newSV_type(SVt_PVCV));
     CvFILE(cv) = "Haskell";
@@ -272,7 +276,7 @@ SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
     return cv_ref;
 }
 
-void reg_sub(pTHX_ const char *name, XSUBADDR_t subaddr){
+void reg_sub(pTHX_ const char *name, HSUBADDR_t subaddr){
     CV *cv = Perl_newXS(aTHX_ name, perl_to_haskell_wrapper, "Haskell");
     CvXSUBANY(cv).any_ptr = (void*) subaddr;
     sv_magicext((SV*)cv, (SV*)cv, PERL_MAGIC_ext, &haskell_cv_vtbl, 0, 0);

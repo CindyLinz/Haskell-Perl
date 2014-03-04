@@ -17,6 +17,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
 import Foreign.C.String
+import Foreign.Ptr
 
 import Perl.Type
 import Perl.Monad
@@ -68,19 +69,19 @@ instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f) => SubReturn (a, b, c,
 instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f, ToSV g) => SubReturn (a, b, c, d, e, f, g) where returnSub (a, b, c, d, e, f, g) = returnSub [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
 
 class Subable a where
-  subBody :: [SV] -> a -> PerlSub s ()
+  subBody :: [SV] -> a -> PerlSub s SV
 
 instance SubReturn ret => Subable (PerlSub s ret) where
   subBody _ body = PerlSubT $ \perl cv -> PerlT $ \_ frames -> do
     (frames', ret) <- unPerlT (unPerlSubT body perl cv) perl frames
-    unPerlT (unPerlSubT (returnSub ret) perl cv) perl frames'
+    unPerlT (unPerlSubT (returnSub ret >> return nullPtr) perl cv) perl frames'
 
 instance (FromSV a, SubReturn ret) => Subable ([a] -> PerlSub s ret) where
   subBody args lambda = do
     a <- lift $ mapM fromSV args
     subBody undefined (lambda a)
 
-currySub :: (FromSV a, Subable others) => [SV] -> (a -> others) -> PerlSub s ()
+currySub :: (FromSV a, Subable others) => [SV] -> (a -> others) -> PerlSub s SV
 currySub args lambda = do
   (a, others) <- case args of
     [] -> do
@@ -101,7 +102,7 @@ instance Subable others => Subable (RefHV -> others) where subBody = currySub
 instance Subable others => Subable (RefCV -> others) where subBody = currySub
 instance SubReturn ret => Subable (String -> PerlSub s ret) where subBody = currySub
 
-subCommon :: Subable a => a -> PerlSub s ()
+subCommon :: Subable a => a -> PerlSub s SV
 subCommon body = do
   args <- G.getSubArgs
   argsList <- liftIO $ getElems args
