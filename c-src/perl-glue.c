@@ -241,9 +241,9 @@ SV *glue_get_error(pTHX){
 
 static int haskell_cv_free(pTHX_ SV *cv, MAGIC *mg){
 #ifdef TRACK_PERL_GLUE
-    printf("free cv subaddr %p\n", (void*)CvXSUB((CV*)cv));
+    printf("free cv subaddr %p\n", (void*)CvXSUBANY((CV*)cv).any_ptr);
 #endif
-    freeHaskellFunPtr((XSUBADDR_t)((void*)CvXSUB((CV*)cv)));
+    freeHaskellFunPtr((XSUBADDR_t)CvXSUBANY((CV*)cv).any_ptr);
     return 0;
 }
 
@@ -252,13 +252,18 @@ static MGVTBL haskell_cv_vtbl = {
     haskell_cv_free
 };
 
+void perl_to_haskell_wrapper(pTHX_ CV *cv){
+    ((XSUBADDR_t)CvXSUBANY(cv).any_ptr)(aTHX_ cv);
+}
+
 SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
     SV *cv_ref;
     CV *cv = MUTABLE_CV(newSV_type(SVt_PVCV));
     CvFILE(cv) = "Haskell";
     CvANON_on(cv);
     CvISXSUB_on(cv);
-    CvXSUB(cv) = subaddr;
+    CvXSUB(cv) = perl_to_haskell_wrapper;
+    CvXSUBANY(cv).any_ptr = (void*)subaddr;
     sv_magicext((SV*)cv, (SV*)cv, PERL_MAGIC_ext, &haskell_cv_vtbl, 0, 0);
     cv_ref = Perl_newRV_noinc(aTHX_ (SV*)cv);
 #ifdef TRACK_PERL_GLUE
@@ -268,7 +273,8 @@ SV *wrap_sub(pTHX_ XSUBADDR_t subaddr){
 }
 
 void reg_sub(pTHX_ const char *name, XSUBADDR_t subaddr){
-    CV *cv = Perl_newXS(aTHX_ name, subaddr, "Haskell");
+    CV *cv = Perl_newXS(aTHX_ name, perl_to_haskell_wrapper, "Haskell");
+    CvXSUBANY(cv).any_ptr = (void*) subaddr;
     sv_magicext((SV*)cv, (SV*)cv, PERL_MAGIC_ext, &haskell_cv_vtbl, 0, 0);
 #ifdef TRACK_PERL_GLUE
     printf("reg cv %s %p %p\n", name, (void*)cv, (void*)subaddr);
