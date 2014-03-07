@@ -1,6 +1,7 @@
 module Main where
 
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
@@ -161,5 +162,13 @@ main = runPerlT $ do
 
   Left errMsg <- eval "die 'fail'" :: PerlT s IO (Either String ())
   liftIO $ putStrLn $ "dead: " ++ errMsg
+
+  defSub "willDie" $ do
+    liftIO $ putStrLn $ "begin willDie"
+    errSV <- toSVMortal "now dead"
+    throwM $ PerlException "now dead" errSV
+    liftIO $ putStrLn $ "end willDie"
+    retSub ()
+  voidEval "eval { willDie() }; print '$@=', $@, $/"
 
   return ()
