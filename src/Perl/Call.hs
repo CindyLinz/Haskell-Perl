@@ -4,6 +4,7 @@ module Perl.Call
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.IO.Class
 
 import Data.Array.Storable
@@ -32,7 +33,7 @@ class Retrievable a where
   context
     :: a -- ^ this value will not be accessed, fine to put an undefined here
     -> Context
-  retrieve :: MonadIO m => SVArray -> PerlT s m a
+  retrieve :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
 
 instance Retrievable () where
   context _ = VoidContext
@@ -46,7 +47,7 @@ instance Retrievable SV where
       then fromSV =<< liftIO (readArray svArray lastIndex)
       else fromSVNon
 
-retrieveFromSV :: (FromSV a, MonadIO m) => SVArray -> PerlT s m a
+retrieveFromSV :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
 retrieveFromSV svArray = fromSV =<< retrieve svArray
 instance Retrievable Int where
   context _ = ScalarContext
@@ -77,7 +78,7 @@ instance Retrievable [SV] where
   context _ = ArrayContext
   retrieve = liftIO . getElems
 
-retrieveFromSVList :: (FromSV a, MonadIO m) => SVArray -> PerlT s m [a]
+retrieveFromSVList :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m [a]
 retrieveFromSVList svArray = mapM fromSV =<< retrieve svArray
 instance Retrievable [Int] where
   context _ = ArrayContext
@@ -102,11 +103,11 @@ instance Retrievable [RefCV] where
   retrieve = retrieveFromSVList
 
 class Retrievable b => PerlEvalable a b where
-  eval :: MonadIO m => a -> PerlT s m (Either String b)
-voidEval :: (MonadIO m, PerlEvalable a ()) => a -> PerlT s m (Either String ())
+  eval :: (MonadCatch m, MonadIO m) => a -> PerlT s m (Either String b)
+voidEval :: (MonadCatch m, MonadIO m, PerlEvalable a ()) => a -> PerlT s m (Either String ())
 voidEval = eval
 
-evalCore :: forall s m b. (MonadIO m, Retrievable b) => CStringLen -> PerlT s m (Either String b)
+evalCore :: forall s m b. (MonadCatch m, MonadIO m, Retrievable b) => CStringLen -> PerlT s m (Either String b)
 evalCore code = do
   res <- G.eval code (const_G_EVAL .|. (contextConstant $ context (undefined :: b)))
   err <- G.getEvalError
@@ -118,26 +119,26 @@ instance Retrievable b => PerlEvalable CStringLen b where
   eval = evalCore
 
 instance Retrievable b => PerlEvalable String b where
-  eval str = PerlT $ \perl frames ->
+  eval str = PerlT $ \perl cv ->
     liftIO $ withCStringLen str $ \cstrlen ->
-      unPerlT (evalCore cstrlen) perl frames
+      unPerlT (evalCore cstrlen) perl cv
 
 class CallType r where
-  collect :: (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> r
+  collect :: (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV]) -> String -> r
 
-instance (Retrievable r, MonadIO m) => CallType (PerlT s m r) where
+instance (Retrievable r, MonadCatch m, MonadIO m) => CallType (PerlT s m r) where
   collect args name = do
     res <- scope $ do
       argList <- args []
-      PerlT $ \perl frames -> liftIO $ withCStringLen name $ \cName -> do
+      PerlT $ \perl cv -> liftIO $ withCStringLen name $ \cName -> do
         argArray <- newListArray (1, length argList) argList
-        unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl frames
+        unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl cv
     retrieve res
 
 instance CallType r => CallType (SV -> r) where
   collect args name sv = collect (args . (sv :)) name
 
-collectToSV :: (ToSV svObj, CallType r) => (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> svObj -> r
+collectToSV :: (ToSV svObj, CallType r) => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV]) -> String -> svObj -> r
 collectToSV args name svObj = collect
   ( \later -> do
     sv <- toSV svObj
@@ -161,7 +162,7 @@ instance CallType r => CallType (RefCV -> r) where
 instance CallType r => CallType ([SV] -> r) where
   collect args name svs = collect (args . (svs ++)) name
 
-collectToSVList :: (ToSV svObj, CallType r) => (forall s m. MonadIO m => [SV] -> PerlT s m [SV]) -> String -> [svObj] -> r
+collectToSVList :: (ToSV svObj, CallType r) => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV]) -> String -> [svObj] -> r
 collectToSVList args name svObjs = collect
   ( \later -> do
     svs <- mapM toSV svObjs

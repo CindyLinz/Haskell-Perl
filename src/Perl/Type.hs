@@ -1,7 +1,8 @@
-{-# LANGUAGE EmptyDataDecls #-}
+{-# LANGUAGE EmptyDataDecls, ExistentialQuantification, DeriveDataTypeable #-}
 module Perl.Type
   where
 
+import Data.Typeable
 import Data.Array.Storable
 
 import Foreign
@@ -41,3 +42,11 @@ type RefCV = Ptr RCV_
 
 type SVArray = StorableArray Int SV
 
+newtype PerlT s m a = PerlT
+  { unPerlT :: PtrPerl -> CV -> m ([SV], a)
+  }
+type Perl s = PerlT s IO
+
+data PerlException = PerlException String SV deriving Typeable
+instance Show PerlException where
+  show (PerlException msg _) = "PerlException " ++ msg

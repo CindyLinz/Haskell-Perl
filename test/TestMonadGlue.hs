@@ -15,6 +15,7 @@ import Foreign.Ptr
 import Perl.Constant
 import Perl.Monad
 import Perl.Internal.MonadGlue
+import Perl.SVArray
 
 main = do
   putStrLn "test begin."
@@ -58,11 +59,10 @@ perl = runPerlT $ do
     argList <- liftIO $ getElems args
     liftIO $ putStrLn "Hello sub:"
     forM_ argList $ \elem -> do
-      i <- lift $ svToInt elem
+      i <- svToInt elem
       liftIO $ putStrLn $ "  got: " ++ show i
-      lift $ setSVInt elem (i+i)
-    liftIO (newListArray (1,2) $ reverse argList) >>= setSubReturns
-    return nullPtr
+      setSVInt elem (i+i)
+    return argList
   callStr <- liftIO $ newCStringLen "call"
   callArgList <- forM [3,4,5] newNumSV
   callArgs <- liftIO $ newListArray (1,4) (castPtr subCV : callArgList)

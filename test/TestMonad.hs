@@ -18,6 +18,7 @@ import Perl.SV
 import Perl.AV
 import Perl.HV
 import Perl.Embed
+import Perl.SVArray
 
 main = runPerlT $ do
   Right res <- eval $
@@ -73,61 +74,56 @@ main = runPerlT $ do
 
   defSub "makeSeq" $ \n -> do
     liftIO $ putStrLn $ show n
-    av <- lift $ toAV [1..(n :: Int)]
-    lift $ do
-      when (n >= 1) $ writeAV av 0 "xx"
-      pushAV av "last"
-      unshiftAV av "first"
-    avRef <- lift $ newRef av
+    av <- toAV [1..(n :: Int)]
+    when (n >= 1) $ writeAV av 0 "xx"
+    pushAV av "last"
+    unshiftAV av "first"
+    avRef <- newRef av
     retSub avRef
 
   defSub "dumpSeq" $ \avRef -> do
-    lift $ do
-      av <- deRef avRef
-      first <- shiftAV av
-      last <- popAV av
-      len <- lengthAV av
-      liftIO $ putStrLn $ "first = " ++ first ++ ", last = " ++ last ++ ", len = " ++ show len
-      forM_ (take (fromIntegral len) [0..]) $ \i -> do
-        a <- readAV av i
-        liftIO $ putStrLn $ "arr[" ++ show i ++ "] = " ++ show (a :: Int)
+    av <- deRef avRef
+    first <- shiftAV av
+    last <- popAV av
+    len <- lengthAV av
+    liftIO $ putStrLn $ "first = " ++ first ++ ", last = " ++ last ++ ", len = " ++ show len
+    forM_ (take (fromIntegral len) [0..]) $ \i -> do
+      a <- readAV av i
+      liftIO $ putStrLn $ "arr[" ++ show i ++ "] = " ++ show (a :: Int)
 
-      intList <- fromAV av
-      liftIO $ putStrLn $ "another dump " ++ show (intList :: [Int])
+    intList <- fromAV av
+    liftIO $ putStrLn $ "another dump " ++ show (intList :: [Int])
 
-      e1 <- existsAV av 1
-      clearAV av
-      e2 <- existsAV av 1
-      liftIO $ putStrLn $ "before clear: " ++ show e1 ++ ", after clear: " ++ show e2
+    e1 <- existsAV av 1
+    clearAV av
+    e2 <- existsAV av 1
+    liftIO $ putStrLn $ "before clear: " ++ show e1 ++ ", after clear: " ++ show e2
     retSub ()
 
   Right () <- eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
 
   defSub "defAscii" $ do
-    hvRef <- lift $ do
-      hv <- newHVEmpty
-      forM_ ['A'..'G'] $ \c -> do
-        writeHV hv [c] (ord c)
-      newRef hv
+    hv <- newHVEmpty
+    forM_ ['A'..'G'] $ \c -> do
+      writeHV hv [c] (ord c)
+    hvRef <- newRef hv
     retSub hvRef
 
   defSub "invAscii" $ \hvRef keys -> do
-    lift $ do
-      hv <- deRef hvRef
-      forM_ keys $ \k -> do
-        n <- readHV hv (k :: String)
-        writeHV hv k (-n :: Int)
+    hv <- deRef hvRef
+    forM_ keys $ \k -> do
+      n <- readHV hv (k :: String)
+      writeHV hv k (-n :: Int)
     retSub ()
 
   defSub "deleteHash" $ \hvRef keys -> do
-    lift $ do
-      hv <- deRef hvRef
-      forM_ keys $ \k -> do
-        deleteHV_ hv (k :: String)
+    hv <- deRef hvRef
+    forM_ keys $ \k -> do
+      deleteHV_ hv (k :: String)
     retSub ()
 
   defSub "clearHash" $ \hvRef -> do
-    lift $ deRef hvRef >>= clearHV
+    deRef hvRef >>= clearHV
     retSub ()
 
   defSub "echo" $ \str -> do
@@ -140,28 +136,25 @@ main = runPerlT $ do
   defSub "incA" $ do
     context <- getSubContext
     liftIO $ putStrLn $ "incA context=" ++ show context
-    lift $ do
-      a <- readFindSV "$a"
-      liftIO $ putStrLn $ "$a = " ++ show (a :: String)
-      writeFindSV "$a"  (a ++ a)
+    a <- readFindSV "$a"
+    liftIO $ putStrLn $ "$a = " ++ show (a :: String)
+    writeFindSV "$a"  (a ++ a)
 
-      svB <- findSV "$b"
-      b <- fromSV svB
-      liftIO $ putStrLn $ "$b = " ++ show (b :: Int)
-      setSV svB (b+1)
+    svB <- findSV "$b"
+    b <- fromSV svB
+    liftIO $ putStrLn $ "$b = " ++ show (b :: Int)
+    setSV svB (b+1)
     retSub ()
   voidEval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
 
-  (defSub "anotherAdd" :: SubReturn ret => PerlSub s ret -> Perl s ()) $ do
+  (defSub "anotherAdd" :: ToSVArray ret => Perl s ret -> Perl s ()) $ do
     context <- getSubContext
     liftIO $ putStrLn $ "anotherAdd context=" ++ show context
-    res <- lift $ do
-      args <- findAV "@_"
-      liftIO $ putStrLn $ show args
-      a <- readAV args 0
-      b <- readAV args 1
-      return (a + b :: Int)
-    return res
+    args <- findAV "@_"
+    liftIO $ putStrLn $ show args
+    a <- readAV args 0
+    b <- readAV args 1
+    return (a + b :: Int)
 
   Right intListRes <- eval "our @_; sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
   liftIO $ putStrLn $ show (intListRes :: [Int])

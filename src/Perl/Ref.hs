@@ -2,6 +2,7 @@
 module Perl.Ref
   where
 
+import Control.Monad.Catch
 import Control.Monad.IO.Class
 
 import Foreign.Ptr
@@ -13,8 +14,8 @@ import Perl.Monad
 import Perl.Internal.MonadGlue
 
 class Refable a b | a -> b, b -> a where
-  newRef :: MonadIO m => a -> PerlT s m b
-  deRef :: MonadIO m => b -> PerlT s m a
+  newRef :: (MonadCatch m, MonadIO m) => a -> PerlT s m b
+  deRef :: (MonadCatch m, MonadIO m) => b -> PerlT s m a
 
 instance Refable SV RefSV where
   newRef = newSVRef
@@ -29,15 +30,15 @@ instance Refable HV RefHV where
   deRef = deRefHV
 
 class AsRef a where
-  safeAsRef :: (MonadIO m, Monad n) => SV -> PerlT s m (n a)
-  asRef :: MonadIO m => SV -> PerlT s m a
+  safeAsRef :: (MonadCatch m, MonadIO m, Monad n) => SV -> PerlT s m (n a)
+  asRef :: (MonadCatch m, MonadIO m) => SV -> PerlT s m a
   asRef sv = do
     maybeRv <- safeAsRef sv
     case maybeRv of
       Just rv -> return rv
       Nothing -> fail "asRv fail"
 
-safeTestRV :: (MonadIO m, Monad n) => (CInt -> Bool) -> SV -> PerlT s m (n (Ptr a))
+safeTestRV :: (MonadCatch m, MonadIO m, Monad n) => (CInt -> Bool) -> SV -> PerlT s m (n (Ptr a))
 safeTestRV pred sv = do
   t <- rvType sv
   return $ if pred t

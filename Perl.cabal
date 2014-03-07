@@ -30,7 +30,6 @@ library
                      , Perl.Embed
                      , Perl.Internal.Glue
                      , Perl.Internal.MonadGlue
-                     , Perl.Monad.Exception
                      --, Perl.Lens
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
@@ -39,6 +38,7 @@ library
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
+                     , exceptions ==0.3.*
   extra-libraries:     perl
 
 executable test-bare
@@ -52,6 +52,7 @@ executable test-bare
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
+                     , exceptions ==0.3.*
   extra-libraries:     perl
 
 executable test-monad-glue
@@ -64,6 +65,7 @@ executable test-monad-glue
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
+                     , exceptions ==0.3.*
   extra-libraries:     perl
 
 executable test-monad
@@ -77,4 +79,5 @@ executable test-monad
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
+                     , exceptions ==0.3.*
   extra-libraries:     perl

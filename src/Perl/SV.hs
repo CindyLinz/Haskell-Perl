@@ -4,6 +4,7 @@ module Perl.SV
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.Catch
 import Control.Monad.IO.Class
 
 import Data.Array.MArray
@@ -19,11 +20,11 @@ import Perl.Internal.MonadGlue
 -- | Copy out the value from a SV and then transform to the specified type
 class FromSV a where
   fromSVNon -- ^ Used when the SV is not existed. This one should be the same as when the SV is undef
-    :: MonadIO m => PerlT s m a
-  fromSV :: MonadIO m => SV -> PerlT s m a
+    :: (MonadCatch m, MonadIO m) => PerlT s m a
+  fromSV :: (MonadCatch m, MonadIO m) => SV -> PerlT s m a
 
   -- ^ extract the LAST SV of an SVArray
-  fromSVArray :: MonadIO m => SVArray -> PerlT s m a
+  fromSVArray :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
   fromSVArray svArray = do
     lastIndex <- liftIO $ snd <$> getBounds svArray
     if lastIndex > 0
@@ -52,10 +53,10 @@ instance FromSV String where
     cStrLen <- svToStr sv
     liftIO $ peekCStringLen cStrLen
 
-refFromSVNon :: MonadIO m => PerlT s m (Ptr a)
+refFromSVNon :: (MonadCatch m, MonadIO m) => PerlT s m (Ptr a)
 refFromSVNon = newSV >>= return . castPtr
 
-refFromSV :: MonadIO m => SV -> PerlT s m (Ptr a)
+refFromSV :: (MonadCatch m, MonadIO m) => SV -> PerlT s m (Ptr a)
 refFromSV sv = newSVSV sv >>= return . castPtr
 
 instance FromSV RefSV where
@@ -72,7 +73,7 @@ instance FromSV RefCV where
   fromSV = refFromSV
 
 class FromSVs a where
-  fromSVs :: MonadIO m => [SV] -> PerlT s m a
+  fromSVs :: (MonadCatch m, MonadIO m) => [SV] -> PerlT s m a
 
 instance FromSVs [SV] where fromSVs = mapM fromSV
 instance FromSVs [Int] where fromSVs = mapM fromSV
@@ -82,11 +83,11 @@ instance FromSVs [String] where fromSVs = mapM fromSV
 -- | Something that could be transformed into an SV
 class ToSV a where
   -- | Copy out the supplied value and transform into an SV
-  toSV :: MonadIO m => a -> PerlT s m SV
+  toSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
   -- | Copy out the supplied value and transform into a mortal SV
-  toSVMortal :: MonadIO m => a -> PerlT s m SV
+  toSVMortal :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
   -- | Copy out the supplied value and transform set into an existed SV
-  setSV :: MonadIO m => SV -> a -> PerlT s m ()
+  setSV :: (MonadCatch m, MonadIO m) => SV -> a -> PerlT s m ()
 
 instance ToSV ToSVObj where
   toSV (ToSVObj a) = toSV a
@@ -114,23 +115,23 @@ instance ToSV Double where
   setSV sv = setSVNum sv . CDouble
 
 instance ToSV String where
-  toSV str = PerlT $ \perl frames ->
+  toSV str = PerlT $ \perl cv ->
     liftIO . withCStringLen str $ \(cstr, len) ->
-      unPerlT (newStrSV cstr (fromIntegral len)) perl frames
-  toSVMortal str = PerlT $ \perl frames ->
+      unPerlT (newStrSV cstr (fromIntegral len)) perl cv
+  toSVMortal str = PerlT $ \perl cv ->
     liftIO . withCStringLen str $ \(cstr, len) ->
-      unPerlT (newStrSVMortal cstr (fromIntegral len)) perl frames
-  setSV sv str = PerlT $ \perl frames ->
+      unPerlT (newStrSVMortal cstr (fromIntegral len)) perl cv
+  setSV sv str = PerlT $ \perl cv ->
     liftIO . withCStringLen str $ \(cstr, len) ->
-      unPerlT (setSVStr sv cstr (fromIntegral len)) perl frames
+      unPerlT (setSVStr sv cstr (fromIntegral len)) perl cv
 
-asToSV :: (AsSV a, MonadIO m) => a -> PerlT s m SV
+asToSV :: (AsSV a, MonadCatch m, MonadIO m) => a -> PerlT s m SV
 asToSV a = asSV a >>= toSV
 
-asToSVMortal :: (AsSV a, MonadIO m) => a -> PerlT s m SV
+asToSVMortal :: (AsSV a, MonadCatch m, MonadIO m) => a -> PerlT s m SV
 asToSVMortal a = asSV a >>= toSVMortal
 
-asSetSV :: (AsSV a, MonadIO m) => SV -> a -> PerlT s m ()
+asSetSV :: (AsSV a, MonadCatch m, MonadIO m) => SV -> a -> PerlT s m ()
 asSetSV sv a = asSV a >>= setSV sv
 
 instance ToSV RefSV where
@@ -151,7 +152,7 @@ instance ToSV RefCV where
   setSV = asSetSV
 
 class ToSVs a where
-  toSVs :: MonadIO m => a -> PerlT s m [SV]
+  toSVs :: (MonadCatch m, MonadIO m) => a -> PerlT s m [SV]
 
 instance ToSVs [SV] where toSVs = mapM toSV
 instance ToSVs [Int] where toSVs = mapM toSV
@@ -163,7 +164,7 @@ data ToSVObj = forall a. ToSV a => ToSVObj a
 -- | Something that could be used as an SV directly
 class AsSV a where
   -- | Use it as an SV, no copy (from the view of Perl)
-  asSV :: MonadIO m => a -> PerlT s m SV
+  asSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
 
 instance AsSV AsSVObj where
   asSV (AsSVObj a) = asSV a
