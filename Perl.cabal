@@ -18,12 +18,14 @@ cabal-version:       >=1.8
 library
   exposed-modules:     Perl
                      , Perl.Type
+                     , Perl.Class
                      , Perl.Constant
                      , Perl.Monad
                      , Perl.Sub
                      , Perl.Call
                      , Perl.Eval
                      , Perl.SV
+                     , Perl.SVArray
                      , Perl.HV
                      , Perl.AV
                      , Perl.Ref
