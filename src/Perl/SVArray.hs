@@ -1,4 +1,4 @@
-{-# LANGUAGE Rank2Types, TypeSynonymInstances, FlexibleInstances, ExistentialQuantification #-}
+{-# LANGUAGE Rank2Types, TypeSynonymInstances, FlexibleInstances, ExistentialQuantification, OverlappingInstances #-}
 module Perl.SVArray
   ( SVArray
   , SVArrayBuilder
