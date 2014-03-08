@@ -128,12 +128,17 @@ class CallType r where
 
 instance (Retrievable r, MonadCatch m, MonadIO m) => CallType (PerlT s m r) where
   collect args name = do
-    res <- scope $ do
+    scope $ do
       argList <- args []
-      PerlT $ \perl cv -> liftIO $ withCStringLen name $ \cName -> do
+      res <- PerlT $ \perl cv -> liftIO $ withCStringLen name $ \cName -> do
         argArray <- newListArray (1, length argList) argList
-        unPerlT (G.callName cName (contextConstant $ context (undefined :: r)) argArray) perl cv
-    retrieve res
+        unPerlT (G.callName cName (const_G_EVAL .|. (contextConstant $ context (undefined :: r))) argArray) perl cv
+      err <- G.getEvalError
+      case err of
+        Just errSV -> do
+          msg <- fromSV errSV
+          throwM $ PerlException msg errSV
+        _ -> retrieve res
 
 instance CallType r => CallType (SV -> r) where
   collect args name sv = collect (args . (sv :)) name
