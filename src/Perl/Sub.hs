@@ -6,6 +6,7 @@ module Perl.Sub
   , sub
   , subDo
   , defSub
+  , die
   ) where
 
 import Data.Array.MArray
@@ -76,3 +77,9 @@ defSub :: (ToSVArray ret, MonadCatch m, MonadIO m, Subable a ret) => String -> a
 defSub name body = PerlT $ \perl cv -> do
   liftIO $ withCString name $ \cName ->
     unPerlT (G.defineSub cName $ subCommon body) perl cv
+
+-- | Throwe a Perl exception
+die :: (MonadCatch m, MonadIO m) => String -> PerlT s m a
+die msg = do
+  errSV <- toSVMortal msg
+  throwM $ PerlException msg errSV

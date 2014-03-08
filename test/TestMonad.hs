@@ -165,8 +165,7 @@ main = runPerlT $ do
 
   defSub "willDie" $ do
     liftIO $ putStrLn $ "begin willDie"
-    errSV <- toSVMortal "now dead"
-    throwM $ PerlException "now dead" errSV
+    die "now dead"
     liftIO $ putStrLn $ "end willDie"
     retSub ()
   voidEval "eval { willDie() }; print '$@=', $@, $/"
