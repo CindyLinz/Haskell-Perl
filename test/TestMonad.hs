@@ -20,6 +20,7 @@ import Perl.AV
 import Perl.HV
 import Perl.Embed
 import Perl.SVArray
+import Perl.Accessor
 
 main = runPerlT $ do
   Right res <- eval $
@@ -169,5 +170,12 @@ main = runPerlT $ do
     liftIO $ putStrLn $ "end willDie"
     retSub ()
   voidEval "eval { willDie() }; print '$@=', $@, $/"
+
+  defSub "accessor" $ do
+    v <- readScalar $ cap "$a" ~% "b" ~@ 1
+    liftIO $ putStrLn $ "accessor got: " ++ show (v :: Int)
+    writeScalar "nice" $ cap "$a" ~% "b" ~@ 2
+    retSub ()
+  voidEval "my $a = {a => 1, b => [1,2,3]}; accessor(); print $a->{b}[2],$/"
 
   return ()

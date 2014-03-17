@@ -5,11 +5,11 @@ module Perl.HV
   , deleteHV
   , deleteHV_
   , HashKey (..)
+  , fetchHV
   -- from Perl.MonadGlue
   , G.newHVEmpty
   , G.clearHV
   , G.peekHV
-  , G.fetchHV
   , G.existsHV
   , G.storeHV
   ) where
@@ -55,3 +55,6 @@ deleteHV_ :: (HashKey k, MonadIO m) => HV -> k -> PerlT s m ()
 deleteHV_ hv key = withHashKey key $ \k -> do
   G.deleteHV hv k
   return ()
+
+fetchHV :: (HashKey k, MonadIO m) => HV -> k -> PerlT s m (Maybe SV)
+fetchHV hv key = withHashKey key $ \k -> G.fetchHV hv k

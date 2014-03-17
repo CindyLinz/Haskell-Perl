@@ -32,6 +32,7 @@ library
                      , Perl.Embed
                      , Perl.Internal.Glue
                      , Perl.Internal.MonadGlue
+                     , Perl.Accessor
                      --, Perl.Lens
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
