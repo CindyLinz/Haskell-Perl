@@ -175,7 +175,9 @@ main = runPerlT $ do
     v <- readScalar $ cap "$a" ~% "b" ~@ 1
     liftIO $ putStrLn $ "accessor got: " ++ show (v :: Int)
     writeScalar "nice" $ cap "$a" ~% "b" ~@ 2
+    avRef <- newRef =<< toAV ["a", "b", "c"]
+    writeScalar avRef $ cap "$a" ~% "b" ~@ 0
     retSub ()
-  voidEval "my $a = {a => 1, b => [1,2,3]}; accessor(); print $a->{b}[2],$/"
+  voidEval "use Data::Dumper; local $Data::Dumper::Indent = 0; my $a = {a => 1, b => [1,2,3]}; accessor(); print Dumper($a),$/"
 
   return ()
