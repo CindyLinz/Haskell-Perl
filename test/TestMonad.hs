@@ -172,12 +172,20 @@ main = runPerlT $ do
   voidEval "eval { willDie() }; print '$@=', $@, $/"
 
   defSub "accessor" $ do
-    v <- readScalar $ cap "$a" ~% "b" ~@ 1
+    v <- readScalar $ cap "%a" ~% "b" ~@ 1
     liftIO $ putStrLn $ "accessor got: " ++ show (v :: Int)
-    writeScalar "nice" $ cap "$a" ~% "b" ~@ 2
+    writeScalar "nice" $ cap "%a" ~% "b" ~@ 2
     avRef <- newRef =<< toAV ["a", "b", "c"]
-    writeScalar avRef $ cap "$a" ~% "b" ~@ 0
+    writeScalar avRef $ cap "%a" ~% "b" ~@ 0
+    writeScalar "x" $ cap "@b" ~@ 1
     retSub ()
-  voidEval "use Data::Dumper; local $Data::Dumper::Indent = 0; my $a = {a => 1, b => [1,2,3]}; accessor(); print Dumper($a),$/"
+  voidEval $
+    "use Data::Dumper;" ++
+    "local $Data::Dumper::Indent = 0;" ++
+    "my %a = (a => 1, b => [1,2,3]);" ++
+    "my @b = qw(c b a);" ++
+    "accessor();" ++
+    "print Dumper(\\%a),$/;" ++
+    "print Dumper(\\@b),$/;"
 
   return ()

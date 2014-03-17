@@ -127,16 +127,18 @@ instance ScalarAccessor HashElement where
 cap :: (MonadCatch m, MonadIO m) => String -> PerlT s m SV
 cap = findSV
 
--- a ~@ i = access array ref
+-- a ~@ i = access array or array ref
 (~@) :: (ScalarAccessor sa, MonadCatch m, MonadIO m) => PerlT s m sa -> Int -> PerlT s m ArrayElement
 capSA ~@ i = do
-  av <- capSA >>= writableScalar >>= asRef >>= deRef
+  avOrRef <- capSA >>= writableScalar
+  av <- safeAsRef avOrRef >>= maybe (return $ castPtr avOrRef) deRef
   return $ ArrayElement av (fromIntegral i)
 
--- a ~% key = access hash ref
+-- a ~% key = access hash or hash ref
 (~%) :: (ScalarAccessor sa, MonadCatch m, MonadIO m) => PerlT s m sa -> String -> PerlT s m HashElement
 capSA ~% key = do
-  hv <- capSA >>= writableScalar >>= asRef >>= deRef
+  hvOrRef <- capSA >>= writableScalar
+  hv <- safeAsRef hvOrRef >>= maybe (return $ castPtr hvOrRef) deRef
   return $ HashElement hv key
 
 infixl 5 ~@, ~%
