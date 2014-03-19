@@ -16,9 +16,6 @@ import Control.Monad.IO.Class
 
 import Foreign.C.String
 import Foreign.Ptr
-import Foreign.Storable
-import Foreign.Marshal.Alloc
-import Foreign.Marshal.Utils
 
 import Perl.Type
 import Perl.Monad
