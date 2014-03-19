@@ -8,6 +8,8 @@ module Perl.AV
   , popAV
   , shiftAV
   , unshiftAV
+  , globalAV
+  , peekGlobalAV
   -- from MonadGlue
   , G.peekAV
   , G.fetchAV
@@ -23,12 +25,24 @@ import Control.Monad.IO.Class
 
 import Data.Array.Storable
 
+import Foreign.Ptr
 import Foreign.C.Types
+import Foreign.C.String
 
 import Perl.Type
 import Perl.Monad
 import qualified Perl.Internal.MonadGlue as G
 import Perl.SV
+
+peekGlobalAV :: (MonadCatch m, MonadIO m) => String -> PerlT s m (Maybe AV)
+peekGlobalAV name = do
+  av <- perlWithAnyIO (withCStringLen name) (flip G.getAV 0)
+  return $ if av == nullPtr
+    then Nothing
+    else Just av
+
+globalAV :: (MonadCatch m, MonadIO m) => String -> PerlT s m AV
+globalAV name = perlWithAnyIO (withCStringLen name) (flip G.getAV 1)
 
 class ToAV a where
   toAV :: (MonadCatch m, MonadIO m) => a -> PerlT s m AV

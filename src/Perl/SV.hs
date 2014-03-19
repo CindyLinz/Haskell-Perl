@@ -1,6 +1,14 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances, ExistentialQuantification, Rank2Types #-}
 module Perl.SV
-  where
+  ( FromSV (..)
+  , ToSV (..)
+  , AsSV (..)
+  , ToSVs (..)
+  , globalSV
+  , peekGlobalSV
+  , ToSVObj (..)
+  , AsSVObj (..)
+  ) where
 
 import Control.Applicative
 import Control.Monad
@@ -16,6 +24,16 @@ import Foreign.Ptr
 import Perl.Type
 import Perl.Monad
 import Perl.Internal.MonadGlue
+
+peekGlobalSV :: (MonadCatch m, MonadIO m) => String -> PerlT s m (Maybe SV)
+peekGlobalSV name = do
+  sv <- perlWithAnyIO (withCStringLen name) (flip getSV 0)
+  return $ if sv == nullPtr
+    then Nothing
+    else Just sv
+
+globalSV :: (MonadCatch m, MonadIO m) => String -> PerlT s m SV
+globalSV name = perlWithAnyIO (withCStringLen name) (flip getSV 1)
 
 -- | Copy out the value from a SV and then transform to the specified type
 class FromSV a where

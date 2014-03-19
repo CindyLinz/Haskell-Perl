@@ -81,6 +81,9 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   "Perl_sv_mortalcopy" perl_sv_mortalcopy :: PtrPerl -> SV -> IO SV
 
+foreign import ccall unsafe
+  perl_get_svn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO SV
+
 ------
 -- write SV
 
@@ -171,6 +174,9 @@ foreign import ccall safe
 foreign import ccall safe
   "Perl_av_shift" perl_av_shift :: PtrPerl -> AV -> IO SV
 
+foreign import ccall unsafe
+  perl_get_avn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO AV
+
 ------
 -- HV
 
@@ -194,6 +200,9 @@ foreign import ccall safe
 
 foreign import ccall safe
   perl_hv_delete :: PtrPerl -> HV -> CString -> StrLen -> IO SV
+
+foreign import ccall unsafe
+  perl_get_hvn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO HV
 
 ------
 -- eval
@@ -242,6 +251,9 @@ foreign import ccall unsafe
 
 foreign import ccall unsafe
   get_sub_context :: PtrPerl -> IO CInt
+
+foreign import ccall unsafe
+  "Perl_get_cvn_flags" perl_get_cvn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO CV
 
 ------
 -- embed

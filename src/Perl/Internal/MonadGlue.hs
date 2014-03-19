@@ -88,6 +88,10 @@ newSVSVMortal :: (MonadCatch m, MonadIO m) => SV -> PerlT s m SV
 newSVSVMortal old = PerlT $ \perl _ ->
   liftIO (perl_sv_mortalcopy perl old) >>= return . pure
 
+getSV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m SV
+getSV (name, namelen) flag = PerlT $ \perl _ ->
+  liftIO (perl_get_svn_flags perl name (fromIntegral namelen) flag) >>= return . pure
+
 ------
 -- read SV
 
@@ -228,6 +232,10 @@ shiftAV :: (MonadCatch m, MonadIO m) => AV -> PerlT s m SV
 shiftAV av = PerlT $ \perl _ ->
   liftIO (perl_av_shift perl av) >>= return . pure
 
+getAV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m AV
+getAV (name, namelen) flag = PerlT $ \perl _ ->
+  liftIO (perl_get_avn_flags perl name (fromIntegral namelen) flag) >>= return . pure
+
 ------
 -- HV
 
@@ -271,6 +279,10 @@ deleteHV hv (key, klen) = PerlT $ \perl _ -> liftIO $ do
   return $ pure $ if sv == nullPtr
     then Nothing
     else Just sv
+
+getHV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m HV
+getHV (name, namelen) flag = PerlT $ \perl _ ->
+  liftIO (perl_get_hvn_flags perl name (fromIntegral namelen) flag) >>= return . pure
 
 ------
 -- eval
@@ -362,28 +374,22 @@ getSubContext :: (MonadCatch m, MonadIO m) => PerlT s m CInt
 getSubContext = PerlT $ \perl cv ->
   liftIO (get_sub_context perl) >>= return . pure
 
+getCV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m CV
+getCV (name, namelen) flag = PerlT $ \perl _ ->
+  liftIO (perl_get_cvn_flags perl name (fromIntegral namelen) flag) >>= return . pure
+
 ------
 -- embed
 
-safeFindSV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m (Maybe SV)
-safeFindSV (name, namelen) = PerlT $ \perl _ -> liftIO $ do
-  sv <- perl_pad_peek_pvn perl name (fromIntegral namelen)
-  return $ pure $ if sv == nullPtr
-    then Nothing
-    else Just sv
-
+-- | find \'my\' or \'our\' scalars
 findSV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m SV
 findSV (name, namelen) = PerlT $ \perl _ ->
   liftIO (perl_pad_peek_pvn perl name (fromIntegral namelen)) >>= return . pure
 
-safeFindAV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m (Maybe AV)
-safeFindAV name = safeFindSV name >>= return . fmap castPtr
-
+-- | find \'my\' or \'our\' arrays
 findAV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m AV
 findAV name = findSV name >>= return . castPtr
 
-safeFindHV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m (Maybe HV)
-safeFindHV name = safeFindSV name >>= return . fmap castPtr
-
+-- | find \'my\' or \'our\' hashs
 findHV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m HV
 findHV name = findSV name >>= return . castPtr

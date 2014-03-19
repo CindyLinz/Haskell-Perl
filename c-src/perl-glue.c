@@ -110,6 +110,17 @@ char *svPVbytex(pTHX_ SV *sv, STRLEN *len){
     return SvPVbytex(sv, (*len));
 }
 
+SV* perl_get_svn_flags(pTHX_ const char *name, STRLEN namelen, I32 flags){
+    GV *gv;
+
+    PERL_ARGS_ASSERT_GET_SV;
+
+    gv = gv_fetchpvn_flags(name, namelen, flags, SVt_PV);
+    if (gv)
+        return GvSV(gv);
+    return NULL;
+}
+
 /* ref */
 
 SV *svRV(SV *rv){
@@ -124,6 +135,19 @@ int rvTYPE(SV *rv){
 void perl_av_unshift(pTHX_ AV *av, SV *sv){
     av_unshift(av, 1);
     av_store(av, 0, sv);
+}
+
+AV* perl_get_avn_flags(pTHX_ const char *name, STRLEN namelen, I32 flags)
+{
+    GV* const gv = gv_fetchpvn_flags(name, namelen, flags, SVt_PVAV);
+
+    PERL_ARGS_ASSERT_GET_AV;
+
+    if (flags)
+        return GvAVn(gv);
+    if (gv)
+        return GvAV(gv);
+    return NULL;
 }
 
 /* hv */
@@ -149,6 +173,19 @@ SV **perl_hv_store(pTHX_ HV *hv, const char *key, STRLEN klen, SV *val){
 
 SV *perl_hv_delete(pTHX_ HV *hv, const char *key, STRLEN klen){
     return hv_delete(hv, key, klen, 0);
+}
+
+HV* perl_get_hvn_flags(pTHX_ const char *name, STRLEN namelen, I32 flags)
+{
+    GV* const gv = gv_fetchpvn_flags(name, namelen, flags, SVt_PVHV);
+
+    PERL_ARGS_ASSERT_GET_HV;
+
+    if (flags)
+        return GvHVn(gv);
+    if (gv)
+        return GvHV(gv);
+    return NULL;
 }
 
 /* eval or call */

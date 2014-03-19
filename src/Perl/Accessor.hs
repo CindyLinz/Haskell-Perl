@@ -2,6 +2,7 @@
 module Perl.Accessor
   where
 
+import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
 
@@ -125,7 +126,10 @@ instance ScalarAccessor HashElement where
       Nothing -> die "unwritable hash"
 
 cap :: (MonadCatch m, MonadIO m) => String -> PerlT s m SV
-cap = findSV
+cap name@(sigil:_) = case sigil of
+  '$' -> findSV name
+  '@' -> liftM castPtr $ findAV name
+  '%' -> liftM castPtr $ findHV name
 
 -- a ~@ i = access array or array ref
 (~@) :: (ScalarAccessor sa, MonadCatch m, MonadIO m) => PerlT s m sa -> Int -> PerlT s m ArrayElement

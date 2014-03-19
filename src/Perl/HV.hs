@@ -6,6 +6,8 @@ module Perl.HV
   , deleteHV_
   , HashKey (..)
   , fetchHV
+  , globalHV
+  , peekGlobalHV
   -- from Perl.MonadGlue
   , G.newHVEmpty
   , G.clearHV
@@ -14,14 +16,26 @@ module Perl.HV
   , G.storeHV
   ) where
 
+import Control.Monad.Catch
 import Control.Monad.IO.Class
 
+import Foreign.Ptr
 import Foreign.C.String
 
 import Perl.Type
 import Perl.Monad
 import qualified Perl.Internal.MonadGlue as G
 import Perl.SV
+
+peekGlobalHV :: (MonadCatch m, MonadIO m) => String -> PerlT s m (Maybe HV)
+peekGlobalHV name = do
+  hv <- perlWithAnyIO (withCStringLen name) (flip G.getHV 0)
+  return $ if hv == nullPtr
+    then Nothing
+    else Just hv
+
+globalHV :: (MonadCatch m, MonadIO m) => String -> PerlT s m HV
+globalHV name = perlWithAnyIO (withCStringLen name) (flip G.getHV 1)
 
 class HashKey k where
   withHashKey :: MonadIO m => k -> (forall s0. CStringLen -> PerlT s0 IO a) -> PerlT s m a

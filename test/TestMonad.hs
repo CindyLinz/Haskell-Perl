@@ -158,7 +158,7 @@ main = runPerlT $ do
     b <- readAV args 1
     return (a + b :: Int)
 
-  Right intListRes <- eval "our @_; sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
+  Right intListRes <- eval "sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
   liftIO $ putStrLn $ show (intListRes :: [Int])
 
   Left errMsg <- eval "die 'fail'" :: PerlT s IO (Either String ())
@@ -179,12 +179,17 @@ main = runPerlT $ do
     writeScalar avRef $ cap "%a" ~% "b" ~@ 0
     writeScalar "x" $ cap "@b" ~@ 1
     retSub ()
+  defSub "accessor2" $ do
+    v <- readScalar $ cap "$_" ~% "x"
+    liftIO $ putStrLn $ "accessor2 got: " ++ v
+    retSub ()
   voidEval $
     "use Data::Dumper;" ++
     "local $Data::Dumper::Indent = 0;" ++
     "my %a = (a => 1, b => [1,2,3]);" ++
     "my @b = qw(c b a);" ++
     "accessor();" ++
+    "for({x=>1},{},{a=>2,x=>'o'}){ accessor2() }" ++
     "print Dumper(\\%a),$/;" ++
     "print Dumper(\\@b),$/;"
 
