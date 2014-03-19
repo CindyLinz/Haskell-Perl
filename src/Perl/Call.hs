@@ -5,6 +5,7 @@ module Perl.Call
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Catch
+import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
 import Data.Array.Storable
@@ -124,31 +125,41 @@ instance Retrievable b => PerlEvalable String b where
       unPerlT (evalCore cstrlen) perl cv
 
 class CallType r where
-  collect :: (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV]) -> String -> r
+  collect
+    :: (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV])
+    -> String
+    -> (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray)
+    -> r
 
 instance (Retrievable r, MonadCatch m, MonadIO m) => CallType (PerlT s m r) where
-  collect args name = do
+  collect args name act = do
     scope $ do
       argList <- args []
       res <- PerlT $ \perl cv -> liftIO $ withCStringLen name $ \cName -> do
         argArray <- newListArray (1, length argList) argList
-        unPerlT (G.callName cName (const_G_EVAL .|. (contextConstant $ context (undefined :: r))) argArray) perl cv
+        unPerlT (act cName (const_G_EVAL .|. (contextConstant $ context (undefined :: r))) argArray) perl cv
       err <- G.getEvalError
       case err of
         Just errSV -> do
           msg <- fromSV errSV
           throwM $ PerlException msg errSV
-        _ -> retrieve res
+        _ -> lift $ retrieve res
 
 instance CallType r => CallType (SV -> r) where
-  collect args name sv = collect (args . (sv :)) name
+  collect args name act sv = collect (args . (sv :)) name act
 
-collectToSV :: (ToSV svObj, CallType r) => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV]) -> String -> svObj -> r
-collectToSV args name svObj = collect
+collectToSV
+  :: (ToSV svObj, CallType r)
+  => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV])
+  -> String
+  -> (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray)
+  -> svObj
+  -> r
+collectToSV args name act svObj = collect
   ( \later -> do
     sv <- toSV svObj
     args $ sv : later
-  ) name
+  ) name act
 instance CallType r => CallType (Int -> r) where
   collect = collectToSV
 instance CallType r => CallType (Double -> r) where
@@ -165,14 +176,20 @@ instance CallType r => CallType (RefCV -> r) where
   collect = collectToSV
 
 instance CallType r => CallType ([SV] -> r) where
-  collect args name svs = collect (args . (svs ++)) name
+  collect args name act svs = collect (args . (svs ++)) name act
 
-collectToSVList :: (ToSV svObj, CallType r) => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV]) -> String -> [svObj] -> r
-collectToSVList args name svObjs = collect
+collectToSVList
+  :: (ToSV svObj, CallType r)
+  => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV])
+  -> String
+  -> (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray)
+  -> [svObj]
+  -> r
+collectToSVList args name act svObjs = collect
   ( \later -> do
     svs <- mapM toSV svObjs
     args $ svs ++ later
-  ) name
+  ) name act
 instance CallType r => CallType ([Int] -> r) where
   collect = collectToSVList
 instance CallType r => CallType ([Double] -> r) where
@@ -188,8 +205,29 @@ instance CallType r => CallType ([RefHV] -> r) where
 instance CallType r => CallType ([RefCV] -> r) where
   collect = collectToSVList
 
+-- | Call a method
 call :: CallType r => String -> r
-call name = collect return name
+call name = collect return name G.callName
+
+-- | Call an object method
+callMethod
+  :: CallType r
+  => SV -- ^ object
+  -> String -- ^ method name
+  -> r
+callMethod obj name = collect (\later -> return (obj : later)) name G.callNameMethod
+
+-- | Call a class method
+callClass
+  :: CallType r
+  => String -- ^ class name (package name)
+  -> String -- ^ method name
+  -> r
+callClass klass name = collect
+  ( \later -> do
+    klassSV <- toSV klass
+    return (klassSV : later)
+  ) name G.callNameMethod
 
 noRet :: MonadIO m => PerlT s m () -> PerlT s m ()
 noRet = id

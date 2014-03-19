@@ -193,4 +193,14 @@ main = runPerlT $ do
     "print Dumper(\\%a),$/;" ++
     "print Dumper(\\@b),$/;"
 
+  defSub "testMethod" $ do
+    obj <- callClass "A" "new" (3 :: Int) (4 :: Int) (5 :: Int)
+    liftIO $ putStrLn $ "obj = " ++ show obj
+    r <- callMethod obj "get" (2 :: Int)
+    liftIO $ putStrLn $ "r = " ++ show (r :: Int)
+    retSub ()
+  voidEval $
+    "{ package A; sub new { print qq(new @_$/); bless \\@_, $_[0] }; sub get { $_[0][$_[1]] } }" ++
+    "testMethod();"
+
   return ()

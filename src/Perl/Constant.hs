@@ -16,6 +16,9 @@ const_G_DISCARD = 4
 const_G_EVAL :: Integral n => n
 const_G_EVAL = 8
 
+const_G_METHOD :: Integral n => n
+const_G_METHOD = 128
+
 const_SVt_NULL, const_SVt_IV, const_SVt_NV, const_SVt_PV, const_SVt_INVLIST,
   const_SVt_PVIV, const_SVt_PVNV, const_SVt_PVMG, const_SVt_REGEXP, const_SVt_PVGV,
   const_SVt_PVLV, const_SVt_PVAV, const_SVt_PVHV, const_SVt_PVCV, const_SVt_PVFM,

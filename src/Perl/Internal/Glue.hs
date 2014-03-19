@@ -225,6 +225,9 @@ foreign import ccall safe
 foreign import ccall safe
   glue_call_pv :: PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt
 
+foreign import ccall safe
+  glue_call_method_pv :: PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt
+
 foreign import ccall unsafe
   glue_get_error :: PtrPerl -> IO SV
 

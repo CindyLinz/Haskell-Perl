@@ -313,10 +313,13 @@ callVar :: (MonadCatch m, MonadIO m) => SV -> CInt -> PerlT s m CInt
 callVar sv flag = PerlT $ \perl _ ->
   liftIO (perl_call_sv perl sv flag) >>= return . pure
 
-callName :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
-callName (name, nameLen) flag args = PerlT $ \perl _ -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
+callCommon
+  :: (MonadCatch m, MonadIO m)
+  => (PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt)
+  -> CStringLen -> CInt -> SVArray -> PerlT s m SVArray
+callCommon act (name, nameLen) flag args = PerlT $ \perl _ -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
   argc <- liftM (fromIntegral . rangeSize) (getBounds args)
-  outn <- glue_call_pv perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
+  outn <- act perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
   if outn == 0
     then
       newArray_ (1, 0) >>= return . pure
@@ -325,6 +328,12 @@ callName (name, nameLen) flag args = PerlT $ \perl _ -> liftIO . withStorableArr
       fptrOut <- newForeignPtr p_free ptrOut
       outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn)
       return $ pure outArray
+
+callName :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
+callName = callCommon glue_call_pv
+
+callNameMethod :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
+callNameMethod = callCommon glue_call_method_pv
 
 ------
 -- sub

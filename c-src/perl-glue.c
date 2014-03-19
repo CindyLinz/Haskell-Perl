@@ -227,6 +227,7 @@ I32 glue_eval_pv(pTHX_ const char *code, STRLEN codelen, I32 flags, /* out */SV 
 
 /* return: num of return values
  */
+inline
 I32 glue_call_sv(pTHX_ SV *sub_sv, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
     dSP;
     PUSHMARK(SP);
@@ -247,6 +248,7 @@ I32 glue_call_sv(pTHX_ SV *sub_sv, I32 flags, I32 argc, SV **argv, /* out */SV *
 
 inline
 I32 glue_call_pv(pTHX_ const char *sub_name, STRLEN namelen, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
+    dSP;
     CV *sub_sv = get_cvn_flags(sub_name, namelen, 0);
 #ifdef TRACK_PERL_GLUE
     printf("glue_call_pv sub_name=%s, flags=%d, argc=%d, argv=%p, outv=%p\n", sub_name, flags, argc, (void*)argv, (void*)outv);
@@ -257,7 +259,6 @@ I32 glue_call_pv(pTHX_ const char *sub_name, STRLEN namelen, I32 flags, I32 argc
         memcpy(builtin_sub_name+18, sub_name, namelen);
         sub_sv = get_cvn_flags(builtin_sub_name, namelen+18, 0);
         if( sub_sv==NULL ) {
-            dSP;
             PUSHMARK(SP);
             XPUSHs(sv_2mortal(newSVpvn(sub_name, namelen)));
             PUTBACK;
@@ -266,6 +267,17 @@ I32 glue_call_pv(pTHX_ const char *sub_name, STRLEN namelen, I32 flags, I32 argc
         sub_sv = get_cvn_flags(builtin_sub_name, namelen+18, 0);
     }
     return glue_call_sv(aTHX_ (SV*)sub_sv, flags, argc, argv, outv);
+}
+
+inline
+I32 glue_call_method_pv(pTHX_ const char *method_name, STRLEN namelen, I32 flags, I32 argc, SV **argv, /* out */SV ***outv){
+#ifdef TRACK_PERL_GLUE
+    printf("glue_call_method_pv method_name=%s, flags=%d, argc=%d, argv=%p, outv=%p\n", method_name, flags, argc, (void*)argv, (void*)outv);
+#endif
+    SV *sub_sv = newSVpvn_flags(method_name, namelen, 0);
+    I32 ret = glue_call_sv(aTHX_ sub_sv, flags | G_METHOD, argc, argv, outv);
+    SvREFCNT_dec(sub_sv);
+    return ret;
 }
 
 SV *glue_get_error(pTHX){
