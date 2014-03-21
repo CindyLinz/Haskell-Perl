@@ -23,7 +23,7 @@ import Perl.SVArray
 import Perl.Accessor
 
 main = runPerlT $ do
-  Right res <- eval $
+  res <- eval $
     "sub call { my $func = shift; @res = $func->(@_); local $\" = ','; print qq( res: @res$/); @res }" ++
     "print 'Hi ', rand 10, $/;" ++
     "use Scalar::Util qw(dualvar);" ++
@@ -102,7 +102,7 @@ main = runPerlT $ do
     liftIO $ putStrLn $ "before clear: " ++ show e1 ++ ", after clear: " ++ show e2
     retSub ()
 
-  Right () <- eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
+  () <- eval "{ my $arr = makeSeq(3); use Data::Dumper; local $Data::Dumper::Indent = 0; print Dumper($arr),$/; dumpSeq(['first',3,4,5,'last']); }"
 
   defSub "defAscii" $ do
     hv <- newHVEmpty
@@ -132,8 +132,8 @@ main = runPerlT $ do
     liftIO $ putStrLn str
     retSub ()
 
-  Right () <- eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
-  Right () <- eval "{ echo 'CindyLinz is pretty' }"
+  () <- eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
+  () <- eval "{ echo 'CindyLinz is pretty' }"
 
   defSub "incA" $ do
     context <- getSubContext
@@ -158,11 +158,10 @@ main = runPerlT $ do
     b <- readAV args 1
     return (a + b :: Int)
 
-  Right intListRes <- eval "sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
+  intListRes <- eval "sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
   liftIO $ putStrLn $ show (intListRes :: [Int])
 
-  Left errMsg <- eval "die 'fail'" :: PerlT s IO (Either String ())
-  liftIO $ putStrLn $ "dead: " ++ errMsg
+  () <- catch (eval "die 'fail'") (\errMsg -> liftIO $ putStrLn $ "dead: " ++ show (errMsg :: SomeException))
 
   defSub "willDie" $ do
     liftIO $ putStrLn $ "begin willDie"

@@ -104,17 +104,17 @@ instance Retrievable [RefCV] where
   retrieve = retrieveFromSVList
 
 class Retrievable b => PerlEvalable a b where
-  eval :: (MonadCatch m, MonadIO m) => a -> PerlT s m (Either String b)
-voidEval :: (MonadCatch m, MonadIO m, PerlEvalable a ()) => a -> PerlT s m (Either String ())
+  eval :: (MonadCatch m, MonadIO m) => a -> PerlT s m b
+voidEval :: (MonadCatch m, MonadIO m, PerlEvalable a ()) => a -> PerlT s m ()
 voidEval = eval
 
-evalCore :: forall s m b. (MonadCatch m, MonadIO m, Retrievable b) => CStringLen -> PerlT s m (Either String b)
+evalCore :: forall s m b. (MonadCatch m, MonadIO m, Retrievable b) => CStringLen -> PerlT s m b
 evalCore code = do
   res <- G.eval code (const_G_EVAL .|. (contextConstant $ context (undefined :: b)))
   err <- G.getEvalError
   case err of
-    Just errSV -> fromSV errSV >>= return . Left
-    _ -> retrieve res >>= return . Right
+    Just errSV -> fromSV errSV >>= throwM . flip PerlException errSV
+    _ -> retrieve res
 
 instance Retrievable b => PerlEvalable CStringLen b where
   eval = evalCore
