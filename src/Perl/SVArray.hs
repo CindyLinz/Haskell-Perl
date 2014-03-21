@@ -52,6 +52,15 @@ breakSVArray breakers svArray = do
   svList <- liftIO $ getElems svArray
   foldM (\svs br -> br svs) svList (unSVArrayBreaker breakers [])
 
+duplicateSVArray :: (MonadCatch m, MonadIO m) => (SV -> PerlT s m SV) -> SVArray -> PerlT s m SVArray
+duplicateSVArray morph orig = do
+  bound <- liftIO $ getBounds orig
+  elems <- liftIO (getElems orig) >>= mapM morph
+  liftIO $ newListArray bound elems
+instance ToSVArray SVArray where
+  toSVArray = duplicateSVArray toSV
+  toSVMortalArray = duplicateSVArray toSVMortal
+
 data ToSVArrayObj = forall a. ToSVArray a => ToSVArrayObj a
 instance ToSVArray ToSVArrayObj where
   toSVArray (ToSVArrayObj a) = toSVArray a
