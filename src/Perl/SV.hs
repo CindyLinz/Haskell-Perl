@@ -17,7 +17,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
 
-import Data.Array.MArray
+import Data.Array.IArray
 
 import Foreign.C.Types
 import Foreign.C.String
@@ -52,11 +52,9 @@ class FromSV a where
 
   -- ^ extract the LAST SV of an SVArray
   fromSVArray :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
-  fromSVArray svArray = do
-    lastIndex <- liftIO $ snd <$> getBounds svArray
-    if lastIndex > 0
-      then fromSV =<< liftIO (readArray svArray lastIndex)
-      else fromSVNon
+  fromSVArray svArray = case elems svArray of
+    [] -> fromSVNon
+    _ -> fromSV (svArray ! snd (bounds svArray))
 
 instance FromSV SV where
   fromSVNon = newSV

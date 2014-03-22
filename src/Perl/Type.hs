@@ -3,7 +3,7 @@ module Perl.Type
   where
 
 import Data.Typeable
-import Data.Array.Storable
+import Data.Array.Unboxed
 
 import Foreign
 import Foreign.C.Types
@@ -40,7 +40,7 @@ type RefHV = Ptr RHV_
 data RCV_
 type RefCV = Ptr RCV_
 
-type SVArray = StorableArray Int SV
+type SVArray = UArray Int SV
 
 newtype PerlT s m a = PerlT
   { unPerlT :: PtrPerl -> CV -> m ([SV], a)

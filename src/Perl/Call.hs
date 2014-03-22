@@ -8,16 +8,18 @@ import Control.Monad.Catch
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
-import Data.Array.Storable
+import Data.Array.IArray
 import Data.Bits
 
 import Foreign.C.Types
 import Foreign.C.String
 
 import Perl.Type
+import Perl.Class
 import Perl.Constant
 import Perl.Monad
 import Perl.SV
+import Perl.SVArray
 import qualified Perl.Internal.MonadGlue as G
 
 data Context
@@ -42,11 +44,7 @@ instance Retrievable () where
 
 instance Retrievable SV where
   context _ = ScalarContext
-  retrieve svArray = do
-    lastIndex <- liftIO $ snd <$> getBounds svArray
-    if lastIndex > 0
-      then fromSV =<< liftIO (readArray svArray lastIndex)
-      else fromSVNon
+  retrieve = fromSVArray
 
 retrieveFromSV :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
 retrieveFromSV svArray = fromSV =<< retrieve svArray
@@ -77,7 +75,7 @@ instance Retrievable SVArray where
   retrieve = return
 instance Retrievable [SV] where
   context _ = ArrayContext
-  retrieve = liftIO . getElems
+  retrieve = return . elems
 
 retrieveFromSVList :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m [a]
 retrieveFromSVList svArray = mapM fromSV =<< retrieve svArray

@@ -8,15 +8,14 @@ import Foreign.C.String
 import Foreign.Ptr
 import Foreign.ForeignPtr
 import Foreign.Marshal.Alloc
-import Foreign.Marshal.Array
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
 
-import Data.Array.MArray
-import Data.Array.Storable hiding (unsafeForeignPtrToStorableArray)
+import Data.Array.IArray
+import Data.Array.Storable.Safe
 import Data.Array.Unsafe
 import Data.Ix
 
@@ -176,10 +175,12 @@ newAVEmpty = PerlT $ \perl _ -> do
 
 newAV :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m AV
 newAV arr = PerlT $ \perl _ -> liftIO $ do
-  withStorableArray arr $ \ptrAs -> do
-    (lower, upper) <- getBounds arr
-    a <- liftIO $ perl_av_make perl (fromIntegral $ upper - lower + 1) ptrAs
-    return ([castPtr a], a)
+  let (lower, upper) = bounds arr
+  unsafeThaw arr >>= flip withStorableArray 
+    ( \ptrAs -> do
+      a <- liftIO $ perl_av_make perl (fromIntegral $ upper - lower + 1) ptrAs
+      return ([castPtr a], a)
+    )
 
 clearAV :: (MonadCatch m, MonadIO m) => AV -> PerlT s m ()
 clearAV av = PerlT $ \perl _ ->
@@ -295,11 +296,10 @@ eval (code, codeLen) flags = PerlT $ \perl _ -> liftIO $ alloca $ \ptrPtrOut -> 
   outn <- glue_eval_pv perl code (fromIntegral codeLen) flags ptrPtrOut
   if outn == 0
     then
-      newArray_ (1, 0) >>= return . pure
+      return $ pure $ array (1, 0) []
     else do
-      ptrOut <- peek ptrPtrOut
-      fptrOut <- newForeignPtr p_free ptrOut
-      outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn)
+      fptrOut <- peek ptrPtrOut >>= newForeignPtr p_free
+      outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn) >>= unsafeFreeze
       return $ pure outArray
 
 getEvalError :: (MonadCatch m, MonadIO m) => PerlT s m (Maybe SV)
@@ -320,17 +320,19 @@ callCommon
   :: (MonadCatch m, MonadIO m)
   => (PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt)
   -> CStringLen -> CInt -> SVArray -> PerlT s m SVArray
-callCommon act (name, nameLen) flag args = PerlT $ \perl _ -> liftIO . withStorableArray args $ \ptrArg -> alloca $ \ptrPtrOut -> do
-  argc <- liftM (fromIntegral . rangeSize) (getBounds args)
-  outn <- act perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
-  if outn == 0
-    then
-      newArray_ (1, 0) >>= return . pure
-    else do
-      ptrOut <- peek ptrPtrOut
-      fptrOut <- newForeignPtr p_free ptrOut
-      outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn)
-      return $ pure outArray
+callCommon act (name, nameLen) flag args = PerlT $ \perl _ ->
+  liftIO $ unsafeThaw args >>= flip withStorableArray
+    ( \ptrArg -> alloca $ \ptrPtrOut -> do
+      let argc = fromIntegral $ rangeSize $ bounds args
+      outn <- act perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
+      if outn == 0
+        then
+          return $ pure $ array (1,0) []
+        else do
+          fptrOut <- peek ptrPtrOut >>= newForeignPtr p_free
+          outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn) >>= unsafeFreeze
+          return $ pure outArray
+    )
 
 callName :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
 callName = callCommon glue_call_pv
@@ -372,14 +374,15 @@ getSubArgs = PerlT $ \perl cv -> liftIO $ do
   args <- newArray_ (1, fromIntegral items)
   withStorableArray args $ \ptrArgs ->
     get_sub_args perl ptrArgs items
-  return $ pure args
+  unsafeFreeze args >>= return . pure
 
 -- must be the last step in the sub that modify the perl stack
 setSubReturns :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m ()
 setSubReturns returns = PerlT $ \perl cv -> liftIO $ do
-  (a, b) <- getBounds returns
-  withStorableArray returns $ \ptrReturns -> do
-    set_sub_returns perl ptrReturns (fromIntegral (b - a + 1))
+  unsafeThaw returns >>= flip withStorableArray
+    ( \ptrReturns ->
+      set_sub_returns perl ptrReturns (fromIntegral $ rangeSize $ bounds returns)
+    )
   return $ pure ()
 
 getSubContext :: (MonadCatch m, MonadIO m) => PerlT s m CInt

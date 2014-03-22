@@ -5,7 +5,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 
 import Data.Array.Unsafe
-import Data.Array.MArray
+import Data.Array.IArray
 
 import Foreign.C.String
 import Foreign.ForeignPtr
@@ -30,7 +30,7 @@ perl = runPerlT $ do
 
   cmd2 <- liftIO $ newCStringLen "use Scalar::Util qw(dualvar); dualvar 3.5, '^_^'"
   res2arr <- eval cmd2 const_G_SCALAR
-  res2 <- liftIO $ readArray res2arr 1
+  let res2 = res2arr ! 1
   liftIO $ free $ fst cmd2
 
   iv2 <- svToInt res2
@@ -46,17 +46,15 @@ perl = runPerlT $ do
   threeStr <- liftIO $ newCString "3"
   threeSV <- newStrSV threeStr 1
   liftIO $ free threeStr
-  sinArgs <- liftIO $ newArray (1,1) threeSV
-  sinRet <- callName sinStr 0 sinArgs
-  sinRet0 <- liftIO $ readArray sinRet 1
-  sinRetNum <- svToNum sinRet0
+  sinRet <- callName sinStr 0 (listArray (1,1) [threeSV])
+  sinRetNum <- svToNum (sinRet ! 1)
   liftIO $ free $ fst sinStr
   liftIO $ putStrLn $ show sinRetNum
 
   --subCV <- wrapSub (\perl cv -> putStrLn "Hello sub")
   subCV <- makeSub $ do
     args <- getSubArgs
-    argList <- liftIO $ getElems args
+    let argList = elems args
     liftIO $ putStrLn "Hello sub:"
     forM_ argList $ \elem -> do
       i <- svToInt elem
@@ -65,12 +63,9 @@ perl = runPerlT $ do
     return argList
   callStr <- liftIO $ newCStringLen "call"
   callArgList <- forM [3,4,5] newNumSV
-  callArgs <- liftIO $ newListArray (1,4) (castPtr subCV : callArgList)
-  callName callStr 0 callArgs
+  callName callStr 0 (listArray (1,4) (castPtr subCV : callArgList))
   liftIO $ free $ fst callStr
 
   dieStr <- liftIO $ newCStringLen "die"
-  fptrNull <- liftIO $ newForeignPtr_ nullPtr
-  emptyArgs <- liftIO $ unsafeForeignPtrToStorableArray fptrNull (1, 0)
-  callName dieStr const_G_EVAL emptyArgs
+  callName dieStr const_G_EVAL (array (1,0) [])
   liftIO $ free $ fst dieStr

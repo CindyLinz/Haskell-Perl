@@ -9,7 +9,7 @@ module Perl.Sub
   , die
   ) where
 
-import Data.Array.MArray
+import Data.Array.IArray
 
 import Control.Monad
 import Control.Monad.Catch
@@ -64,8 +64,7 @@ instance ToSVArray ret => Subable (String -> Perl s ret) ret where subBody = cur
 subCommon :: (ToSVArray ret, Subable a ret) => a -> Perl s ret
 subCommon body = do
   args <- G.getSubArgs
-  argsList <- liftIO $ getElems args
-  subBody argsList body
+  subBody (elems args) body
 
 sub :: (ToSVArray ret, MonadCatch m, MonadIO m, Subable a ret) => a -> PerlT s m RefCV
 sub body = G.makeSub $ subCommon body

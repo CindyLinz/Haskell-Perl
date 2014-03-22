@@ -23,7 +23,7 @@ import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
 
-import Data.Array.Storable
+import Data.Array.IArray
 
 import Foreign.Ptr
 import Foreign.C.Types
@@ -47,14 +47,13 @@ globalAV name = perlWithAnyIO (withCStringLen name) (flip G.getAV 1)
 class ToAV a where
   toAV :: (MonadCatch m, MonadIO m) => a -> PerlT s m AV
 
-instance ToAV (StorableArray Int SV) where
+instance ToAV SVArray where
   toAV = G.newAV
 
 instance ToSV a => ToAV [a] where
   toAV as = do
     listSV <- mapM toSV as
-    arr <- liftIO $ newListArray (1, length as) listSV
-    G.newAV arr
+    G.newAV (listArray (1, length as) listSV)
 
 class FromAV a where
   fromAV :: (MonadCatch m, MonadIO m) => AV -> PerlT s m a
