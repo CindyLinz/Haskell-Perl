@@ -2,12 +2,10 @@
 module Perl.SV
   ( FromSV (..)
   , ToSV (..)
-  , AsSV (..)
   , ToSVs (..)
   , globalSV
   , peekGlobalSV
   , ToSVObj (..)
-  , AsSVObj (..)
   ) where
 
 import Control.Applicative
@@ -22,6 +20,7 @@ import Foreign.C.String
 import Foreign.Ptr
 
 import Perl.Type
+import Perl.Constant
 import Perl.Monad
 import Perl.Internal.MonadGlue
 
@@ -99,23 +98,33 @@ instance FromSVs [Double] where fromSVs = mapM fromSV
 instance FromSVs [String] where fromSVs = mapM fromSV
 
 -- | Something that could be transformed into an SV
+--   Minimal implementation: (toSV, toSVMortal, setSV) or asSV
 class ToSV a where
   -- | Copy out the supplied value and transform into an SV
   toSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
+  toSV a = asSV a >>= toSV
   -- | Copy out the supplied value and transform into a mortal SV
   toSVMortal :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
+  toSVMortal a = asSV a >>= toSVMortal
   -- | Copy out the supplied value and transform set into an existed SV
   setSV :: (MonadCatch m, MonadIO m) => SV -> a -> PerlT s m ()
+  setSV sv a = asSV a >>= setSV sv
+  -- | Try to use it as an SV, no copy (from the view of Perl) if possible
+  --   or use toSV instead
+  asSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
+  asSV = toSV
 
 instance ToSV ToSVObj where
   toSV (ToSVObj a) = toSV a
   toSVMortal (ToSVObj a) = toSVMortal a
   setSV sv (ToSVObj a) = setSV sv a
+  asSV (ToSVObj a) = asSV a
 
 instance ToSV SV where
   toSV = newSVSV
   toSVMortal = newSVSVMortal
   setSV = setSVSV
+  asSV = return
 
 instance ToSV () where
   toSV _ = newSV
@@ -143,32 +152,6 @@ instance ToSV String where
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (setSVStr sv cstr (fromIntegral len)) perl cv
 
-asToSV :: (AsSV a, MonadCatch m, MonadIO m) => a -> PerlT s m SV
-asToSV a = asSV a >>= toSV
-
-asToSVMortal :: (AsSV a, MonadCatch m, MonadIO m) => a -> PerlT s m SV
-asToSVMortal a = asSV a >>= toSVMortal
-
-asSetSV :: (AsSV a, MonadCatch m, MonadIO m) => SV -> a -> PerlT s m ()
-asSetSV sv a = asSV a >>= setSV sv
-
-instance ToSV RefSV where
-  toSV = asToSV
-  toSVMortal = asToSVMortal
-  setSV = asSetSV
-instance ToSV RefAV where
-  toSV = asToSV
-  toSVMortal = asToSVMortal
-  setSV = asSetSV
-instance ToSV RefHV where
-  toSV = asToSV
-  toSVMortal = asToSVMortal
-  setSV = asSetSV
-instance ToSV RefCV where
-  toSV = asToSV
-  toSVMortal = asToSVMortal
-  setSV = asSetSV
-
 class ToSVs a where
   toSVs :: (MonadCatch m, MonadIO m) => a -> PerlT s m [SV]
 
@@ -179,19 +162,7 @@ instance ToSVs [String] where toSVs = mapM toSV
 
 data ToSVObj = forall a. ToSV a => ToSVObj a
 
--- | Something that could be used as an SV directly
-class AsSV a where
-  -- | Use it as an SV, no copy (from the view of Perl)
-  asSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
-
-instance AsSV AsSVObj where
-  asSV (AsSVObj a) = asSV a
-
-instance AsSV SV where asSV = return
-instance AsSV CV where asSV = return . castPtr
-instance AsSV RefSV where asSV = return . castPtr
-instance AsSV RefAV where asSV = return . castPtr
-instance AsSV RefHV where asSV = return . castPtr
-instance AsSV RefCV where asSV = return . castPtr
-
-data AsSVObj = forall a. AsSV a => AsSVObj a
+instance ToSV RefSV where asSV = return . castPtr
+instance ToSV RefAV where asSV = return . castPtr
+instance ToSV RefHV where asSV = return . castPtr
+instance ToSV RefCV where asSV = return . castPtr

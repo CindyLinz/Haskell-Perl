@@ -47,31 +47,14 @@ globalAV name = perlWithAnyIO (withCStringLen name) (flip G.getAV 1)
 class ToAV a where
   toAV :: (MonadCatch m, MonadIO m) => a -> PerlT s m AV
 
-asSVToAV :: (AsSV a, MonadCatch m, MonadIO m) => [a] -> PerlT s m AV
-asSVToAV as = do
-  listSV <- mapM asSV as
-  arr <- liftIO $ newListArray (1, length as) listSV
-  G.newAV arr
-
-toSVToAV :: (ToSV a, MonadCatch m, MonadIO m) => [a] -> PerlT s m AV
-toSVToAV as = do
-  listSV <- mapM toSV as
-  arr <- liftIO $ newListArray (1, length as) listSV
-  G.newAV arr
-
 instance ToAV (StorableArray Int SV) where
   toAV = G.newAV
 
-instance ToAV [AsSVObj] where toAV = asSVToAV
-instance ToAV [SV] where toAV = asSVToAV
-instance ToAV [RefSV] where toAV = asSVToAV
-instance ToAV [RefAV] where toAV = asSVToAV
-instance ToAV [RefHV] where toAV = asSVToAV
-instance ToAV [RefCV] where toAV = asSVToAV
-
-instance ToAV [Int] where toAV = toSVToAV
-instance ToAV [Double] where toAV = toSVToAV
-instance ToAV [String] where toAV = toSVToAV
+instance ToSV a => ToAV [a] where
+  toAV as = do
+    listSV <- mapM toSV as
+    arr <- liftIO $ newListArray (1, length as) listSV
+    G.newAV arr
 
 class FromAV a where
   fromAV :: (MonadCatch m, MonadIO m) => AV -> PerlT s m a
