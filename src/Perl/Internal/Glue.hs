@@ -84,6 +84,9 @@ foreign import ccall unsafe
 foreign import ccall unsafe
   perl_get_svn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO SV
 
+foreign import ccall unsafe
+  svTYPE :: SV -> IO CInt
+
 ------
 -- write SV
 

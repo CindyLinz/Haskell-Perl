@@ -6,6 +6,10 @@ module Perl.SV
   , globalSV
   , peekGlobalSV
   , ToSVObj (..)
+  , isSV
+  , isAV
+  , isHV
+  , isCV
   ) where
 
 import Control.Applicative
@@ -33,6 +37,12 @@ peekGlobalSV name = do
 
 globalSV :: (MonadCatch m, MonadIO m) => String -> PerlT s m SV
 globalSV name = perlWithAnyIO (withCStringLen name) (flip getSV 1)
+
+isSV, isAV, isHV, isCV :: (MonadCatch m, MonadIO m) => SV -> PerlT s m Bool
+isSV sv = svType sv >>= return . (< const_SVt_PVAV)
+isAV sv = svType sv >>= return . (== const_SVt_PVAV)
+isHV sv = svType sv >>= return . (== const_SVt_PVHV)
+isCV sv = svType sv >>= return . (== const_SVt_PVCV)
 
 -- | Copy out the value from a SV and then transform to the specified type
 class FromSV a where

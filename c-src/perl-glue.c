@@ -131,6 +131,10 @@ int rvTYPE(SV *rv){
     return SvTYPE(SvRV(rv));
 }
 
+int svTYPE(SV *sv){
+    return SvTYPE(sv);
+}
+
 /* av */
 void perl_av_unshift(pTHX_ AV *av, SV *sv){
     av_unshift(av, 1);

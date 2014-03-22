@@ -110,6 +110,9 @@ svToStr sv = PerlT $ \perl _ -> liftIO $ alloca $ \ptrLen -> do
   len <- peek ptrLen
   return $ pure (ptrStr, fromIntegral len)
 
+svType :: (MonadCatch m, MonadIO m) => SV -> PerlT s m CInt
+svType = liftIO . svTYPE
+
 ------
 -- write SV
 
