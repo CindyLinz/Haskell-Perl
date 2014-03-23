@@ -312,19 +312,15 @@ getEvalError = PerlT $ \perl _ -> do
 ------
 -- call
 
-callVar :: (MonadCatch m, MonadIO m) => SV -> CInt -> PerlT s m CInt
-callVar sv flag = PerlT $ \perl _ ->
-  liftIO (perl_call_sv perl sv flag) >>= return . pure
-
 callCommon
   :: (MonadCatch m, MonadIO m)
-  => (PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt)
-  -> CStringLen -> CInt -> SVArray -> PerlT s m SVArray
-callCommon act (name, nameLen) flag args = PerlT $ \perl _ ->
+  => (PtrPerl -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt)
+  -> CInt -> SVArray -> PerlT s m SVArray
+callCommon act flag args = PerlT $ \perl _ ->
   liftIO $ unsafeThaw args >>= flip withStorableArray
     ( \ptrArg -> alloca $ \ptrPtrOut -> do
       let argc = fromIntegral $ rangeSize $ bounds args
-      outn <- act perl name (fromIntegral nameLen) flag argc ptrArg ptrPtrOut
+      outn <- act perl flag argc ptrArg ptrPtrOut
       if outn == 0
         then
           return $ pure $ array (1,0) []
@@ -335,10 +331,13 @@ callCommon act (name, nameLen) flag args = PerlT $ \perl _ ->
     )
 
 callName :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
-callName = callCommon glue_call_pv
+callName (name, nameLen) = callCommon $ \perl -> glue_call_pv perl name (fromIntegral nameLen)
+
+callVar :: (MonadCatch m, MonadIO m) => RefCV -> CInt -> SVArray -> PerlT s m SVArray
+callVar sv = callCommon $ \perl -> glue_call_sv perl sv
 
 callNameMethod :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
-callNameMethod = callCommon glue_call_method_pv
+callNameMethod (name, nameLen) = callCommon $ \perl -> glue_call_method_pv perl name (fromIntegral nameLen)
 
 ------
 -- sub

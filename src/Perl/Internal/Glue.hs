@@ -220,10 +220,7 @@ foreign import ccall safe
 -- call
 
 foreign import ccall safe
-  "Perl_call_sv" perl_call_sv :: PtrPerl -> SV -> CInt -> IO CInt
-
-foreign import ccall safe
-  "Perl_call_pv" perl_call_pv :: PtrPerl -> CString -> CInt -> IO CInt
+  glue_call_sv :: PtrPerl -> RefCV -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt
 
 foreign import ccall safe
   glue_call_pv :: PtrPerl -> CString -> StrLen -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt

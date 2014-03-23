@@ -132,25 +132,27 @@ class CallType r where
 
 callCommon
   :: forall ret s m. (Retrievable ret, MonadCatch m, MonadIO m)
-  => (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s (PerlT s m) SVArray)
-  -> String
+  => (forall s m. (MonadCatch m, MonadIO m) => CInt -> SVArray -> PerlT s (PerlT s m) SVArray)
   -> [SV]
   -> PerlT s (PerlT s m) ret
-callCommon act name args = PerlT $ \perl1 cv1 -> PerlT $ \perl2 cv2 ->
-  liftIO $ withCStringLen name $ \cName -> unPerlT (unPerlT (do
-    argArray <- asSVArray args
-    res <- act cName (const_G_EVAL .|. (contextConstant $ context (undefined :: ret))) argArray
-    err <- G.getEvalError
-    case err of
-      Just errSV -> do
-        msg <- fromSV errSV
-        throwM $ PerlException msg errSV
-      _ -> lift $ retrieve res
-  ) perl2 cv2) perl1 cv1
+callCommon act args = do
+  argArray <- asSVArray args
+  res <- act (const_G_EVAL .|. (contextConstant $ context (undefined :: ret))) argArray
+  err <- G.getEvalError
+  case err of
+    Just errSV -> do
+      msg <- fromSV errSV
+      throwM $ PerlException msg errSV
+    _ -> lift $ retrieve res
 
--- | Call a method
+-- | Call a function
 call :: (ToSVList args, Retrievable ret, MonadCatch m, MonadIO m) => String -> args -> PerlT s m ret
-call method args = scope $ asSVList args >>= callCommon G.callName method
+call method args = perlWithAnyIO (withCStringLen method) $ \cName ->
+  scope $ asSVList args >>= callCommon (G.callName cName)
+
+-- | Call a code (sub) reference
+callVar :: (ToSVList args, Retrievable ret, MonadCatch m, MonadIO m) => RefCV -> args -> PerlT s m ret
+callVar sub args = scope $ asSVList args >>= callCommon (G.callVar sub)
 
 -- | Call an object method
 callMethod
@@ -159,7 +161,8 @@ callMethod
   -> String -- ^ method name
   -> args
   -> PerlT s m ret
-callMethod obj method args = scope $ liftM (obj :) (asSVList args) >>= callCommon G.callNameMethod method
+callMethod obj method args = perlWithAnyIO (withCStringLen method) $ \cName ->
+  scope $ liftM (obj :) (asSVList args) >>= callCommon (G.callNameMethod cName)
 
 -- | Call a class method
 callClass
@@ -168,10 +171,11 @@ callClass
   -> String -- ^ method name
   -> args
   -> PerlT s m ret
-callClass klass method args = scope $ do
-  klassSV <- asSV klass
-  svList <- asSVList args
-  callCommon G.callNameMethod method (klassSV : svList)
+callClass klass method args = perlWithAnyIO (withCStringLen method) $ \cName ->
+  scope $ do
+    klassSV <- asSV klass
+    svList <- asSVList args
+    callCommon (G.callNameMethod cName) (klassSV : svList)
 
 noRet :: MonadIO m => PerlT s m () -> PerlT s m ()
 noRet = id
