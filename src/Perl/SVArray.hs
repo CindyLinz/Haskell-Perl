@@ -156,3 +156,22 @@ instance (ToSV a, ToSV b, ToSV c, ToSV d, ToSV e, ToSV f, ToSV g) => ToSVArray (
   toSVArray (a, b, c, d, e, f, g) = toSVArray [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
   toSVMortalArray (a, b, c, d, e, f, g) = toSVMortalArray [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
   asSVArray (a, b, c, d, e, f, g) = asSVArray [ToSVObj a, ToSVObj b, ToSVObj c, ToSVObj d, ToSVObj e, ToSVObj f, ToSVObj g]
+
+fromSVFromSVArray :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
+fromSVFromSVArray svArray = case elems svArray of
+  [] -> fromSVNon
+  _ -> fromSV (svArray ! snd (bounds svArray))
+
+instance FromSVArray () where fromSVArray _ = return ()
+instance FromSVArray SV where fromSVArray = fromSVFromSVArray
+instance FromSVArray Int where fromSVArray = fromSVFromSVArray
+instance FromSVArray Double where fromSVArray = fromSVFromSVArray
+instance FromSVArray String where fromSVArray = fromSVFromSVArray
+instance FromSVArray RefSV where fromSVArray = fromSVFromSVArray
+instance FromSVArray RefAV where fromSVArray = fromSVFromSVArray
+instance FromSVArray RefHV where fromSVArray = fromSVFromSVArray
+instance FromSVArray RefCV where fromSVArray = fromSVFromSVArray
+instance FromSVArray SVArray where fromSVArray = duplicateSVArray asSV
+
+instance FromSV a => FromSVArray [a] where
+  fromSVArray = mapM fromSV . elems

@@ -32,12 +32,6 @@ class FromSV a where
     :: (MonadCatch m, MonadIO m) => PerlT s m a
   fromSV :: (MonadCatch m, MonadIO m) => SV -> PerlT s m a
 
-  -- ^ extract the LAST SV of an SVArray
-  fromSVArray :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
-  fromSVArray svArray = case elems svArray of
-    [] -> fromSVNon
-    _ -> fromSV (svArray ! snd (bounds svArray))
-
 class ToSVArray a where
   -- | Get a SVArray with each element duplicated
   toSVArray :: (MonadCatch m, MonadIO m) => a -> PerlT s m SVArray
@@ -45,6 +39,9 @@ class ToSVArray a where
   toSVMortalArray :: (MonadCatch m, MonadIO m) => a -> PerlT s m SVArray
   -- | Get a SVArray and try to use the same element if possible
   asSVArray :: (MonadCatch m, MonadIO m) => a -> PerlT s m SVArray
+
+class FromSVArray a where
+  fromSVArray :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
 
 class ToSVList a where
   -- | Get a [SV] with each element duplicated

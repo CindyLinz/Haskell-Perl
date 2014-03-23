@@ -33,74 +33,36 @@ contextConstant VoidContext = const_G_VOID
 contextConstant ScalarContext = const_G_SCALAR
 contextConstant ArrayContext = const_G_ARRAY
 
-class Retrievable a where
+class FromSVArray a => Retrievable a where
   context
     :: a -- ^ this value will not be accessed, fine to put an undefined here
     -> Context
-  retrieve :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
 
 instance Retrievable () where
   context _ = VoidContext
-  retrieve _ = return ()
 
 instance Retrievable SV where
   context _ = ScalarContext
-  retrieve = fromSVArray
 
-retrieveFromSV :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
-retrieveFromSV svArray = fromSV =<< retrieve svArray
 instance Retrievable Int where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 instance Retrievable Double where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 instance Retrievable String where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 instance Retrievable RefSV where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 instance Retrievable RefAV where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 instance Retrievable RefHV where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 instance Retrievable RefCV where
   context _ = ScalarContext
-  retrieve = retrieveFromSV
 
 instance Retrievable SVArray where
   context _ = ArrayContext
-  retrieve = return
-instance Retrievable [SV] where
+instance FromSV a => Retrievable [a] where
   context _ = ArrayContext
-  retrieve = return . elems
-
-retrieveFromSVList :: (FromSV a, MonadCatch m, MonadIO m) => SVArray -> PerlT s m [a]
-retrieveFromSVList svArray = mapM fromSV =<< retrieve svArray
-instance Retrievable [Int] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
-instance Retrievable [Double] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
-instance Retrievable [String] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
-instance Retrievable [RefSV] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
-instance Retrievable [RefAV] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
-instance Retrievable [RefHV] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
-instance Retrievable [RefCV] where
-  context _ = ArrayContext
-  retrieve = retrieveFromSVList
 
 class Retrievable b => PerlEvalable a b where
   eval :: (MonadCatch m, MonadIO m) => a -> PerlT s m b
@@ -113,7 +75,7 @@ evalCore code = do
   err <- G.getEvalError
   case err of
     Just errSV -> fromSV errSV >>= throwM . flip PerlException errSV
-    _ -> retrieve res
+    _ -> fromSVArray res
 
 instance Retrievable b => PerlEvalable CStringLen b where
   eval = evalCore
@@ -143,7 +105,7 @@ callCommon act args = do
     Just errSV -> do
       msg <- fromSV errSV
       throwM $ PerlException msg errSV
-    _ -> lift $ retrieve res
+    _ -> lift $ fromSVArray res
 
 -- | Call a function
 call :: (ToSVList args, Retrievable ret, MonadCatch m, MonadIO m) => String -> args -> PerlT s m ret
