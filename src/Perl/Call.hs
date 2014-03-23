@@ -20,6 +20,7 @@ import Perl.Constant
 import Perl.Monad
 import Perl.SV
 import Perl.SVArray
+import Perl.SVList
 import qualified Perl.Internal.MonadGlue as G
 
 data Context
@@ -129,103 +130,48 @@ class CallType r where
     -> (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray)
     -> r
 
-instance (Retrievable r, MonadCatch m, MonadIO m) => CallType (PerlT s m r) where
-  collect args name act = do
-    scope $ do
-      argList <- args []
-      res <- PerlT $ \perl cv -> liftIO $ withCStringLen name $ \cName -> do
-        argArray <- newListArray (1, length argList) argList
-        unPerlT (act cName (const_G_EVAL .|. (contextConstant $ context (undefined :: r))) argArray) perl cv
-      err <- G.getEvalError
-      case err of
-        Just errSV -> do
-          msg <- fromSV errSV
-          throwM $ PerlException msg errSV
-        _ -> lift $ retrieve res
-
-instance CallType r => CallType (SV -> r) where
-  collect args name act sv = collect (args . (sv :)) name act
-
-collectToSV
-  :: (ToSV svObj, CallType r)
-  => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV])
+callCommon
+  :: forall ret s m. (Retrievable ret, MonadCatch m, MonadIO m)
+  => (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s (PerlT s m) SVArray)
   -> String
-  -> (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray)
-  -> svObj
-  -> r
-collectToSV args name act svObj = collect
-  ( \later -> do
-    sv <- toSV svObj
-    args $ sv : later
-  ) name act
-instance CallType r => CallType (Int -> r) where
-  collect = collectToSV
-instance CallType r => CallType (Double -> r) where
-  collect = collectToSV
-instance CallType r => CallType (String -> r) where
-  collect = collectToSV
-instance CallType r => CallType (RefSV -> r) where
-  collect = collectToSV
-instance CallType r => CallType (RefAV -> r) where
-  collect = collectToSV
-instance CallType r => CallType (RefHV -> r) where
-  collect = collectToSV
-instance CallType r => CallType (RefCV -> r) where
-  collect = collectToSV
-
-instance CallType r => CallType ([SV] -> r) where
-  collect args name act svs = collect (args . (svs ++)) name act
-
-collectToSVList
-  :: (ToSV svObj, CallType r)
-  => (forall s m. (MonadCatch m, MonadIO m) => [SV] -> PerlT s m [SV])
-  -> String
-  -> (forall s m. (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray)
-  -> [svObj]
-  -> r
-collectToSVList args name act svObjs = collect
-  ( \later -> do
-    svs <- mapM toSV svObjs
-    args $ svs ++ later
-  ) name act
-instance CallType r => CallType ([Int] -> r) where
-  collect = collectToSVList
-instance CallType r => CallType ([Double] -> r) where
-  collect = collectToSVList
-instance CallType r => CallType ([String] -> r) where
-  collect = collectToSVList
-instance CallType r => CallType ([RefSV] -> r) where
-  collect = collectToSVList
-instance CallType r => CallType ([RefAV] -> r) where
-  collect = collectToSVList
-instance CallType r => CallType ([RefHV] -> r) where
-  collect = collectToSVList
-instance CallType r => CallType ([RefCV] -> r) where
-  collect = collectToSVList
+  -> [SV]
+  -> PerlT s (PerlT s m) ret
+callCommon act name args = PerlT $ \perl1 cv1 -> PerlT $ \perl2 cv2 ->
+  liftIO $ withCStringLen name $ \cName -> unPerlT (unPerlT (do
+    argArray <- asSVArray args
+    res <- act cName (const_G_EVAL .|. (contextConstant $ context (undefined :: ret))) argArray
+    err <- G.getEvalError
+    case err of
+      Just errSV -> do
+        msg <- fromSV errSV
+        throwM $ PerlException msg errSV
+      _ -> lift $ retrieve res
+  ) perl2 cv2) perl1 cv1
 
 -- | Call a method
-call :: CallType r => String -> r
-call name = collect return name G.callName
+call :: (ToSVList args, Retrievable ret, MonadCatch m, MonadIO m) => String -> args -> PerlT s m ret
+call method args = scope $ asSVList args >>= callCommon G.callName method
 
 -- | Call an object method
 callMethod
-  :: CallType r
-  => SV -- ^ object
+  :: (ToSVList args, Retrievable ret, MonadCatch m, MonadIO m)
+  => SV -- ^ the object
   -> String -- ^ method name
-  -> r
-callMethod obj name = collect (\later -> return (obj : later)) name G.callNameMethod
+  -> args
+  -> PerlT s m ret
+callMethod obj method args = scope $ liftM (obj :) (asSVList args) >>= callCommon G.callNameMethod method
 
 -- | Call a class method
 callClass
-  :: CallType r
+  :: (ToSVList args, Retrievable ret, MonadCatch m, MonadIO m)
   => String -- ^ class name (package name)
   -> String -- ^ method name
-  -> r
-callClass klass name = collect
-  ( \later -> do
-    klassSV <- toSV klass
-    return (klassSV : later)
-  ) name G.callNameMethod
+  -> args
+  -> PerlT s m ret
+callClass klass method args = scope $ do
+  klassSV <- asSV klass
+  svList <- asSVList args
+  callCommon G.callNameMethod method (klassSV : svList)
 
 noRet :: MonadIO m => PerlT s m () -> PerlT s m ()
 noRet = id

@@ -20,7 +20,7 @@ import Perl.AV
 import Perl.HV
 import Perl.Embed
 import Perl.SVArray
-import Perl.Accessor
+--import Perl.Accessor
 
 main = runPerlT $ do
   res <- eval $
@@ -52,10 +52,10 @@ main = runPerlT $ do
         else do
           liftIO $ putStrLn $ "2 ans"
           retSub ((-b + sqrt det) / (2 * a), (-b - sqrt det) / (2 * a), extraRet)
-  noRet $ call "call" cv (1 :: Double) (2 :: Double) (1 :: Double) "a"
-  noRet $ call "call" cv (1 :: Int) (1 :: Double) (1 :: Int)
-  noRet $ call "call" cv (1 :: Int)
-  res132 <- call "call" cv (1 :: Double) (3 :: Int) "2" "b" "c"
+  noRet $ call "call" (cv, 1 :: Double, 2 :: Double, 1 :: Double, "a")
+  noRet $ call "call" (cv, 1 :: Int, 1 :: Double, 1 :: Int)
+  noRet $ call "call" (cv, 1 :: Int)
+  res132 <- call "call" (cv, 1 :: Double, 3 :: Int, "2", "b", "c")
   liftIO $ putStrLn $ "res132 = " ++ show (res132 :: [String])
 
   defSub "my_test_add3" $ \a b c -> do
@@ -64,10 +64,10 @@ main = runPerlT $ do
     liftIO $ putStrLn $ "a = " ++ show a ++ ", b = " ++ show b ++ ", c = " ++ show c
     retSub (a + b + c :: Double)
 
-  my_test_add3_res <- call "my_test_add3" "1" (2 :: Int) (3 :: Double)
+  my_test_add3_res <- call "my_test_add3" ("1", 2 :: Int, 3 :: Double)
   liftIO $ putStrLn $ "my_test_add3 -> " ++ show (my_test_add3_res :: Int)
 
-  noRet $ call "call" "my_test_add3" "3" (2 :: Int) (1 :: Double)
+  noRet $ call "call" ("my_test_add3", "3", 2 :: Int, 1 :: Double)
 
   defSub "cindy_is_beautiful" $ \n -> do
     liftIO $ putStrLn $ "CindyLinz is beautiful" ++ take n (repeat '!')
@@ -170,36 +170,36 @@ main = runPerlT $ do
     retSub ()
   voidEval "eval { willDie() }; print '$@=', $@, $/"
 
-  defSub "accessor" $ do
-    v <- readScalar $ cap "%a" ~% "b" ~@ 1
-    liftIO $ putStrLn $ "accessor got: " ++ show (v :: Int)
-    writeScalar "nice" $ cap "%a" ~% "b" ~@ 2
-    avRef <- newRef =<< toAV ["a", "b", "c"]
-    writeScalar avRef $ cap "%a" ~% "b" ~@ 0
-    writeScalar "x" $ cap "@b" ~@ 1
-    retSub ()
-  defSub "accessor2" $ do
-    v <- readScalar $ cap "$_" ~% "x"
-    liftIO $ putStrLn $ "accessor2 got: " ++ v
-    retSub ()
-  voidEval $
-    "use Data::Dumper;" ++
-    "local $Data::Dumper::Indent = 0;" ++
-    "my %a = (a => 1, b => [1,2,3]);" ++
-    "my @b = qw(c b a);" ++
-    "accessor();" ++
-    "for({x=>1},{},{a=>2,x=>'o'}){ accessor2() }" ++
-    "print Dumper(\\%a),$/;" ++
-    "print Dumper(\\@b),$/;"
-
-  defSub "testMethod" $ do
-    obj <- callClass "A" "new" (3 :: Int) (4 :: Int) (5 :: Int)
-    liftIO $ putStrLn $ "obj = " ++ show obj
-    r <- callMethod obj "get" (2 :: Int)
-    liftIO $ putStrLn $ "r = " ++ show (r :: Int)
-    retSub ()
-  voidEval $
-    "{ package A; sub new { print qq(new @_$/); bless \\@_, $_[0] }; sub get { $_[0][$_[1]] } }" ++
-    "testMethod();"
+--  defSub "accessor" $ do
+--    v <- readScalar $ cap "%a" ~% "b" ~@ 1
+--    liftIO $ putStrLn $ "accessor got: " ++ show (v :: Int)
+--    writeScalar "nice" $ cap "%a" ~% "b" ~@ 2
+--    avRef <- newRef =<< toAV ["a", "b", "c"]
+--    writeScalar avRef $ cap "%a" ~% "b" ~@ 0
+--    writeScalar "x" $ cap "@b" ~@ 1
+--    retSub ()
+--  defSub "accessor2" $ do
+--    v <- readScalar $ cap "$_" ~% "x"
+--    liftIO $ putStrLn $ "accessor2 got: " ++ v
+--    retSub ()
+--  voidEval $
+--    "use Data::Dumper;" ++
+--    "local $Data::Dumper::Indent = 0;" ++
+--    "my %a = (a => 1, b => [1,2,3]);" ++
+--    "my @b = qw(c b a);" ++
+--    "accessor();" ++
+--    "for({x=>1},{},{a=>2,x=>'o'}){ accessor2() }" ++
+--    "print Dumper(\\%a),$/;" ++
+--    "print Dumper(\\@b),$/;"
+--
+--  defSub "testMethod" $ do
+--    obj <- callClass "A" "new" (3 :: Int) (4 :: Int) (5 :: Int)
+--    liftIO $ putStrLn $ "obj = " ++ show obj
+--    r <- callMethod obj "get" (2 :: Int)
+--    liftIO $ putStrLn $ "r = " ++ show (r :: Int)
+--    retSub ()
+--  voidEval $
+--    "{ package A; sub new { print qq(new @_$/); bless \\@_, $_[0] }; sub get { $_[0][$_[1]] } }" ++
+--    "testMethod();"
 
   return ()

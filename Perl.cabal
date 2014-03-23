@@ -26,6 +26,7 @@ library
                      , Perl.Eval
                      , Perl.SV
                      , Perl.SVArray
+                     , Perl.SVList
                      , Perl.HV
                      , Perl.AV
                      , Perl.Ref

@@ -2,7 +2,6 @@
 module Perl.SV
   ( FromSV (..)
   , ToSV (..)
-  , ToSVs (..)
   , globalSV
   , peekGlobalSV
   , ToSVObj (..)
@@ -25,6 +24,7 @@ import Foreign.Ptr
 
 import Perl.Type
 import Perl.Constant
+import Perl.Class
 import Perl.Monad
 import Perl.Internal.MonadGlue
 
@@ -43,18 +43,6 @@ isSV sv = svType sv >>= return . (< const_SVt_PVAV)
 isAV sv = svType sv >>= return . (== const_SVt_PVAV)
 isHV sv = svType sv >>= return . (== const_SVt_PVHV)
 isCV sv = svType sv >>= return . (== const_SVt_PVCV)
-
--- | Copy out the value from a SV and then transform to the specified type
-class FromSV a where
-  fromSVNon -- ^ Used when the SV is not existed. This one should be the same as when the SV is undef
-    :: (MonadCatch m, MonadIO m) => PerlT s m a
-  fromSV :: (MonadCatch m, MonadIO m) => SV -> PerlT s m a
-
-  -- ^ extract the LAST SV of an SVArray
-  fromSVArray :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m a
-  fromSVArray svArray = case elems svArray of
-    [] -> fromSVNon
-    _ -> fromSV (svArray ! snd (bounds svArray))
 
 instance FromSV SV where
   fromSVNon = newSV
@@ -97,31 +85,6 @@ instance FromSV RefCV where
   fromSVNon = refFromSVNon
   fromSV = refFromSV
 
-class FromSVs a where
-  fromSVs :: (MonadCatch m, MonadIO m) => [SV] -> PerlT s m a
-
-instance FromSVs [SV] where fromSVs = mapM fromSV
-instance FromSVs [Int] where fromSVs = mapM fromSV
-instance FromSVs [Double] where fromSVs = mapM fromSV
-instance FromSVs [String] where fromSVs = mapM fromSV
-
--- | Something that could be transformed into an SV
---   Minimal implementation: (toSV, toSVMortal, setSV) or asSV
-class ToSV a where
-  -- | Copy out the supplied value and transform into an SV
-  toSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
-  toSV a = asSV a >>= toSV
-  -- | Copy out the supplied value and transform into a mortal SV
-  toSVMortal :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
-  toSVMortal a = asSV a >>= toSVMortal
-  -- | Copy out the supplied value and transform set into an existed SV
-  setSV :: (MonadCatch m, MonadIO m) => SV -> a -> PerlT s m ()
-  setSV sv a = asSV a >>= setSV sv
-  -- | Try to use it as an SV, no copy (from the view of Perl) if possible
-  --   or use toSV instead
-  asSV :: (MonadCatch m, MonadIO m) => a -> PerlT s m SV
-  asSV = toSV
-
 instance ToSV ToSVObj where
   toSV (ToSVObj a) = toSV a
   toSVMortal (ToSVObj a) = toSVMortal a
@@ -159,14 +122,6 @@ instance ToSV String where
   setSV sv str = PerlT $ \perl cv ->
     liftIO . withCStringLen str $ \(cstr, len) ->
       unPerlT (setSVStr sv cstr (fromIntegral len)) perl cv
-
-class ToSVs a where
-  toSVs :: (MonadCatch m, MonadIO m) => a -> PerlT s m [SV]
-
-instance ToSVs [SV] where toSVs = mapM toSV
-instance ToSVs [Int] where toSVs = mapM toSV
-instance ToSVs [Double] where toSVs = mapM toSV
-instance ToSVs [String] where toSVs = mapM toSV
 
 data ToSVObj = forall a. ToSV a => ToSVObj a
 
