@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Perl.AV
-  ( ToAV (toAV)
+  ( ToAV (toAV, setAV)
   , FromAV (fromAV)
   , readAV
   , writeAV
@@ -33,6 +33,7 @@ import Perl.Type
 import Perl.Monad
 import qualified Perl.Internal.MonadGlue as G
 import Perl.SV
+import Perl.SVArray
 
 peekGlobalAV :: (MonadCatch m, MonadIO m) => String -> PerlT s m (Maybe AV)
 peekGlobalAV name = do
@@ -46,14 +47,15 @@ globalAV name = perlWithAnyIO (withCStringLen name) (flip G.getAV 1)
 
 class ToAV a where
   toAV :: (MonadCatch m, MonadIO m) => a -> PerlT s m AV
+  setAV :: (MonadCatch m, MonadIO m) => AV -> a -> PerlT s m ()
 
 instance ToAV SVArray where
   toAV = G.newAV
+  setAV = G.setAV
 
 instance ToSV a => ToAV [a] where
-  toAV as = do
-    listSV <- mapM toSV as
-    G.newAV (listArray (1, length as) listSV)
+  toAV as = toSVArray as >>= G.newAV
+  setAV av as = toSVArray as >>= G.setAV av
 
 class FromAV a where
   fromAV :: (MonadCatch m, MonadIO m) => AV -> PerlT s m a

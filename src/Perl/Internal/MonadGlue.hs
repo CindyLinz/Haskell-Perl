@@ -175,11 +175,18 @@ newAVEmpty = PerlT $ \perl _ -> do
 
 newAV :: (MonadCatch m, MonadIO m) => SVArray -> PerlT s m AV
 newAV arr = PerlT $ \perl _ -> liftIO $ do
-  let (lower, upper) = bounds arr
   unsafeThaw arr >>= flip withStorableArray 
     ( \ptrAs -> do
-      a <- liftIO $ perl_av_make perl (fromIntegral $ upper - lower + 1) ptrAs
+      a <- liftIO $ perl_av_make perl (fromIntegral $ rangeSize $ bounds arr) ptrAs
       return ([castPtr a], a)
+    )
+
+setAV :: (MonadCatch m, MonadIO m) => AV -> SVArray -> PerlT s m ()
+setAV av arr = PerlT $ \perl _ -> liftIO $ do
+  unsafeThaw arr >>= flip withStorableArray 
+    ( \ptrAs -> do
+      liftIO $ glue_av_set perl av (fromIntegral $ rangeSize $ bounds arr) ptrAs
+      return $ pure ()
     )
 
 clearAV :: (MonadCatch m, MonadIO m) => AV -> PerlT s m ()

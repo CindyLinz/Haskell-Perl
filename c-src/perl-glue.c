@@ -136,6 +136,15 @@ int svTYPE(SV *sv){
 }
 
 /* av */
+void glue_av_set(pTHX_ AV *av, I32 n, SV** elems){
+    I32 i;
+    av_clear(av);
+    av_extend(av, n);
+    for(i=0; i<n; ++i)
+        if( av_store(av, i, elems[i]) )
+            svREFCNT_inc_void(elems[i]);
+}
+
 void perl_av_unshift(pTHX_ AV *av, SV *sv){
     av_unshift(av, 1);
     av_store(av, 0, sv);

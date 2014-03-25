@@ -151,6 +151,9 @@ foreign import ccall safe
   "Perl_av_make" perl_av_make :: PtrPerl -> CInt -> Ptr SV -> IO AV
 
 foreign import ccall safe
+  glue_av_set :: PtrPerl -> AV -> CInt -> Ptr SV -> IO ()
+
+foreign import ccall safe
   "Perl_av_clear" perl_av_clear :: PtrPerl -> AV -> IO ()
 
 foreign import ccall safe

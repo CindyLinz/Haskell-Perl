@@ -170,6 +170,12 @@ main = runPerlT $ do
     retSub ()
   voidEval "eval { willDie() }; print '$@=', $@, $/"
 
+  defSub "setAV" $ do
+    av <- findAV "@a"
+    setAV av [7,8 :: Int]
+    retSub ()
+  voidEval "my @a = (2,3,4); setAV(); local $Data::Dumper::Indent = 0; print Dumper(\\@a),$/"
+
 --  defSub "accessor" $ do
 --    v <- readScalar $ cap "%a" ~% "b" ~@ 1
 --    liftIO $ putStrLn $ "accessor got: " ++ show (v :: Int)
