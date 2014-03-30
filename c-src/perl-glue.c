@@ -124,11 +124,17 @@ SV* perl_get_svn_flags(pTHX_ const char *name, STRLEN namelen, I32 flags){
 /* ref */
 
 SV *svRV(SV *rv){
-    return SvRV(rv);
+    if( SvROK(rv) )
+        return SvRV(rv);
+    else
+        return NULL;
 }
 
 int rvTYPE(SV *rv){
-    return SvTYPE(SvRV(rv));
+    if( SvROK(rv) )
+        return SvTYPE(SvRV(rv));
+    else
+        return -1;
 }
 
 int svTYPE(SV *sv){

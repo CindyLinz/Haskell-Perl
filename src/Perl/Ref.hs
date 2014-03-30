@@ -44,38 +44,37 @@ class AsRef a where
   safeAsRef :: (MonadCatch m, MonadIO m, Monad n) => SV -> PerlT s m (n a)
   asRef :: (MonadCatch m, MonadIO m) => SV -> PerlT s m a
 
-asRefCommon :: (MonadCatch m, MonadIO m, AsRef a) => String -> SV -> PerlT s m a
-asRefCommon typeName sv = do
-  maybeRv <- safeAsRef sv
-  case maybeRv of
-    Just rv -> return rv
-    Nothing -> do
-      let msg = "cast " ++ typeName ++ " failed"
+asRefCommon :: (MonadCatch m, MonadIO m, AsRef a) => SV -> PerlT s m a
+asRefCommon sv = do
+  eitherRv <- safeAsRef sv
+  case eitherRv of
+    Right rv -> return rv
+    Left msg -> do
       errSV <- toSVMortal msg
       throwM $ PerlException msg errSV
 
-safeTestRV :: (MonadCatch m, MonadIO m, Monad n) => (CInt -> Bool) -> SV -> PerlT s m (n (Ptr a))
-safeTestRV pred sv = do
+safeTestRV :: (MonadCatch m, MonadIO m, Monad n) => String -> (CInt -> Bool) -> SV -> PerlT s m (n (Ptr a))
+safeTestRV typeName pred sv = do
   t <- rvType sv
   return $ if pred t
     then return $ castPtr sv
-    else fail ""
+    else fail $ "cast " ++ typeName ++ " failed (svTYPE=" ++ show t ++ ")" 
 
 instance AsRef RefSV where
-  safeAsRef = safeTestRV (< const_SVt_PVAV)
-  asRef = asRefCommon "scalar ref"
+  safeAsRef = safeTestRV "scalar ref" (< const_SVt_PVAV)
+  asRef = asRefCommon
 
 instance AsRef RefAV where
-  safeAsRef = safeTestRV (== const_SVt_PVAV)
-  asRef = asRefCommon "array ref"
+  safeAsRef = safeTestRV "array ref" (== const_SVt_PVAV)
+  asRef = asRefCommon
 
 instance AsRef RefHV where
-  safeAsRef = safeTestRV (== const_SVt_PVHV)
-  asRef = asRefCommon "hash ref"
+  safeAsRef = safeTestRV "hash ref" (== const_SVt_PVHV)
+  asRef = asRefCommon
 
 instance AsRef RefCV where
-  safeAsRef = safeTestRV (== const_SVt_PVCV)
-  asRef = asRefCommon "code ref"
+  safeAsRef = safeTestRV "code ref" (== const_SVt_PVCV)
+  asRef = asRefCommon
 
 --instance AsRef RefGV where
 --  safeAsRef = safeTestRV (== const_SVt_PVGV)
