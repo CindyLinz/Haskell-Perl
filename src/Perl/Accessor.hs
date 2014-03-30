@@ -2,6 +2,9 @@
 module Perl.Accessor
   where
 
+import Data.Array.IArray
+
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
@@ -10,144 +13,187 @@ import Foreign.Ptr
 import Foreign.C.Types
 
 import Perl.Type
+import Perl.Constant
 import Perl.Monad
 import Perl.Class
 import Perl.SV
 import Perl.AV
 import Perl.HV
 import Perl.Embed
-import Perl.Ref
+import Perl.Ref hiding (deRef)
+import qualified Perl.Ref as Ref
 import Perl.Sub
+import Perl.Call hiding (eval, call)
+import qualified Perl.Call as Call
 
-{-
- my $data = { a => 3
- , b => [4, 5, 6]
- , c => { x => 1, y => 'abc', z => [3, 2, 1] }
- , d => [ sub { return $_[0] + $_[1] + 3 } ]
- , e => sub { return [3,$_[0]+1,5] }
- };
+-- my $data = { a => 3
+-- , b => [4, 5, 6]
+-- , c => { x => 1, y => 'abc', z => [3, 2, 1] }
+-- , d => [ sub { return $_[0] + $_[1] + 3 } ]
+-- , e => sub { return [3,$_[0]+1,5] }
+-- };
 
+-- capO <- cap "@o"
+-- [capA, capB] <- caps "$a,$b"
+-- capI <- cap "$_"
+-- [cap1, cap2, cap4] <- caps "@_[1,2,4]"
+-- [capX] <- caps "$data->{b}[1]"
 
- v <- get $ "b" <.> 1
- -- v = 5
- set ("b" <.> 2) 7
- "b" <.> 2 .= 7
- -- b => [4, 5, 7]
- k <- call ("d" <.> 0) 2
- k <- "d" <.> 0 <$> 2 <*> 1
- -- k = 6
+data PerlVar 
+  = PerlVarSV SV
+  | PerlVarSVArray SVArray
+  | PerlVarArrayElement AV Int
+  | PerlVarHashElement HV String
 
- sv <- cap "$data" ~% "b" -- sv = alias of av ref to [4,5,6]
- v <- get $ cap "$data" ~% "b" ~@ 1 -- v = 5
- v <- fromSV $ cap "$data" ~% "b" ~@ 1 -- v = 5
- cap "$data" ~% "b" ~@ 2 ~= 7 -- $data->{b} = [4,5,7]
- ? cap "$data" ~% "b" ~@ [2,3] ~= [4,5] -- $data->{b} = [4,5,4,5]
- k <- call (cap "$data" ~% "d" ~@ 0) 2 1 -- k = 6
- j <- fromSV $ call (cap "$data" ~% "e") 2 ~@ 1 -- j = 3
- ? cap "$data" ~% "c" ~% ("x", "z" ~@ 0) ~= (3, 5) -- $data->{c} = { x => 3, y => 'abc', z => [5, 2, 1] }
+infixl 1 @-, %-, &-, .&-, .&&-, -$, &, $=, @=, %=, %+=
 
- -}
+(&) :: a -> (a -> b) -> b
+a & f = f a
 
-----cap :: String -> Accessor () SV
---
-----(~%) :: Accessor a SV -> String -> Accessor a b
---
-----type SVAccessor = Perl s SV
---
-----Functor f. SV -> f (SV -> Perl s SV) -> Perl s (f SV)
---
---data SVExtractor a = SVExtractor { unSVExtractor :: forall s. SV -> Perl s a }
-----(SVExtractor a, SVExtractor b) -> SVExtractor (a, b)
-----[SVExtractor a] -> SVExtractor [a]
-----Either (SVExtractor a) (SVExtractor b) -> SVExtractor (Either a b)
----- by Traversable
---
---instance Functor SVExtractor where
---  fmap f (SVExtractor ext) = SVExtractor $ \sv -> ext sv >>= return . f
---
---instance Monad SVExtractor where
---  return a = SVExtractor $ \_ -> return a
---  k >>= f = SVExtractor $ \sv -> do
---    a <- unSVExtractor k sv
---    unSVExtractor (f a) sv
+(-$) :: (a -> b) -> a -> b
+f -$ a = f a
 
-class ScalarAccessor scalar where
-  readScalar :: (FromSV a, MonadCatch m, MonadIO m) => PerlT s m scalar -> PerlT s m a
-  writeScalar :: (ToSV a, MonadCatch m, MonadIO m) => a -> PerlT s m scalar -> PerlT s m ()
-  writableScalar :: (MonadCatch m, MonadIO m) => scalar -> PerlT s m SV
+cap :: (MonadCatch m, MonadIO m) => String -> PerlT s m PerlVar
+cap code = do
+  ref <- Call.eval ('\\' : code)
+  Ref.deRef (ref :: RefSV) >>= return . PerlVarSV
 
-instance ScalarAccessor SV where
-  readScalar capSV = do
-    sv <- capSV
-    if sv == nullPtr
-      then fromSVNon
-      else fromSV sv
-  writeScalar a capSV = do
-    sv <- capSV
-    if sv == nullPtr
-      then return ()
-      else setSV sv a
-  writableScalar = return
+caps :: (MonadCatch m, MonadIO m) => String -> PerlT s m [PerlVar]
+caps code = do
+  Call.eval ('\\' : code) >>= mapM (\ref -> Ref.deRef (ref :: RefSV) >>= return . PerlVarSV)
 
-data ArrayElement = ArrayElement AV {-# UNPACK #-} !CInt
-instance ScalarAccessor ArrayElement where
-  readScalar capAVE = do
-    ArrayElement av i <- capAVE
-    if av == nullPtr
-      then fromSVNon
-      else readAV av i
-  writeScalar a capAVE = do
-    ArrayElement av i <- capAVE
-    if av == nullPtr
-      then return ()
-      else writeAV av i a
-  writableScalar (ArrayElement av i) = do
-    maybeSV <- fetchAV av i
+reifyScalar :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SV
+reifyScalar v = case v of
+  PerlVarSV sv -> return sv
+  PerlVarSVArray svs -> fromSVArray svs
+  PerlVarArrayElement av i -> do
+    maybeSV <- fetchAV av (fromIntegral i)
     case maybeSV of
       Just sv -> return sv
-      Nothing -> die "unwritable array"
-
-data HashElement = HashElement HV String
-instance ScalarAccessor HashElement where
-  readScalar capHVE = do
-    HashElement hv key <- capHVE
-    if hv == nullPtr
-      then fromSVNon
-      else readHV hv key
-  writeScalar a capHVE = do
-    HashElement hv key <- capHVE
-    if hv == nullPtr
-      then return ()
-      else writeHV hv key a
-  writableScalar (HashElement av key) = do
-    maybeSV <- fetchHV av key
+      Nothing -> die "can't get real SV"
+  PerlVarHashElement hv key -> do
+    maybeSV <- fetchHV hv key
     case maybeSV of
       Just sv -> return sv
-      Nothing -> die "unwritable hash"
+      Nothing -> die "can't get real SV"
 
-cap :: (MonadCatch m, MonadIO m) => String -> PerlT s m SV
-cap name@(sigil:_) = case sigil of
-  '$' -> findSV name
-  '@' -> liftM castPtr $ findAV name
-  '%' -> liftM castPtr $ findHV name
+writableScalar :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SV
+writableScalar v = reifyScalar v
 
--- a ~@ i = access array or array ref
-(~@) :: (ScalarAccessor sa, MonadCatch m, MonadIO m) => PerlT s m sa -> Int -> PerlT s m ArrayElement
-capSA ~@ i = do
-  avOrRef <- capSA >>= writableScalar
-  av <- safeAsRef avOrRef >>= maybe (return $ castPtr avOrRef) deRef
-  return $ ArrayElement av (fromIntegral i)
+reifyScalarArray :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SVArray
+reifyScalarArray v = case v of
+  PerlVarSVArray svs -> return svs
+  _ -> reifyScalar v >>= return . listArray (1,1) . pure
 
--- a ~% key = access hash or hash ref
-(~%) :: (ScalarAccessor sa, MonadCatch m, MonadIO m) => PerlT s m sa -> String -> PerlT s m HashElement
-capSA ~% key = do
-  hvOrRef <- capSA >>= writableScalar
-  hv <- safeAsRef hvOrRef >>= maybe (return $ castPtr hvOrRef) deRef
-  return $ HashElement hv key
+accessArray :: (MonadCatch m, MonadIO m) => PerlVar -> Int -> PerlT s m PerlVar -- array(or arrayref) access
+accessArray v i = do
+  sv <- reifyScalar v
+  ty <- svType sv
+  av <- case () of
+    _ | ty < const_SVt_PVAV -> asRef sv >>= Ref.deRef
+    _ | ty == const_SVt_PVAV -> return $ castPtr sv
+    _ -> die "not array or array reference"
+  return $ PerlVarArrayElement av i
 
-infixl 5 ~@, ~%
+accessHash :: (MonadCatch m, MonadIO m) => PerlVar -> String -> PerlT s m PerlVar -- hash(or hashref) access
+accessHash v k = do
+  sv <- reifyScalar v
+  ty <- svType sv
+  hv <- case () of
+    _ | ty < const_SVt_PVAV -> asRef sv >>= Ref.deRef
+    _ | ty == const_SVt_PVHV -> return $ castPtr sv
+    _ -> die "not hash or hash reference"
+  return $ PerlVarHashElement hv k
 
--- (a ~& func) arg1 arg2
-(~&) :: (AsSV sv, MonadCatch m, MonadIO m) => sv -> String -> PerlT s m SV
-(~&) = undefined
+accessMethod :: (MonadCatch m, MonadIO m) => PerlVar -> String -> PerlT s m PerlVar -- method call (no args)
+accessMethod v method = do
+  obj <- reifyScalar v
+  ret <- callMethod obj method ()
+  return $ PerlVarSVArray ret
 
+accessMethodArgs :: (ToSVList args, MonadCatch m, MonadIO m) => PerlVar -> String -> args -> PerlT s m PerlVar -- method call (with args)
+accessMethodArgs v method args = do
+  obj <- reifyScalar v
+  ret <- callMethod obj method args
+  return $ PerlVarSVArray ret
+
+(@-) :: (MonadCatch m, MonadIO m) => PerlT s m PerlVar -> Int -> PerlT s m PerlVar -- array(or arrayref) access
+capVar @- i = capVar >>= flip accessArray i
+
+(%-) :: (MonadCatch m, MonadIO m) => PerlT s m PerlVar -> String -> PerlT s m PerlVar -- hash(or hashref) access
+capVar %- key = capVar >>= flip accessHash key
+
+(.&-) :: (MonadCatch m, MonadIO m) => PerlT s m PerlVar -> String -> PerlT s m PerlVar -- method call (no args)
+capVar .&- method = capVar >>= flip accessMethod method
+
+(.&&-) :: (ToSVList args, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> String -> args -> PerlT s m PerlVar -- method call (with args)
+(capVar .&&- method) args = capVar >>= \obj -> accessMethodArgs obj method args
+
+deRef :: (MonadCatch m, MonadIO m) => PerlT s m PerlVar -> PerlT s m PerlVar -- dereference
+deRef capVar = capVar >>= reifyScalar >>= asRef >>= Ref.deRef >>= return . PerlVarSV
+
+eval :: (MonadCatch m, MonadIO m) => String -> PerlT s m PerlVar
+eval code = Call.eval code >>= return . PerlVarSVArray
+
+call :: (MonadCatch m, MonadIO m) => String -> PerlT s m PerlVar -- call function (no args)
+call func = Call.call func () >>= return . PerlVarSVArray
+
+callArgs :: (ToSVList args, MonadCatch m, MonadIO m) => String -> args -> PerlT s m PerlVar -- call function (with args)
+callArgs func args = Call.call func args >>= return . PerlVarSVArray
+
+callSub :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m PerlVar -- call sub (no args)
+callSub sub = reifyScalar sub >>= asRef >>= flip Call.callVar () >>= return . PerlVarSVArray
+
+callSubArgs :: (ToSVList args, MonadCatch m, MonadIO m) => PerlVar -> args -> PerlT s m PerlVar
+callSubArgs sub args = reifyScalar sub >>= asRef >>= flip Call.callVar args >>= return . PerlVarSVArray
+
+(&-) :: (ToSVList args, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> args -> PerlT s m PerlVar
+capSub &- args = capSub >>= flip callSubArgs args
+
+readScalar :: (FromSV a, MonadCatch m, MonadIO m) => PerlVar -> PerlT s m a
+readScalar var = reifyScalar var >>= fromSV
+
+writeScalar :: (ToSV a, MonadCatch m, MonadIO m)  => PerlVar -> a -> PerlT s m ()
+writeScalar var a = reifyScalar var >>= flip setSV a
+
+($=) :: (ToSV a, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> a -> PerlT s m PerlVar
+capVar $= a = capVar >>= reifyScalar >>= flip setSV a >> capVar
+
+readList :: (FromSVArray a, MonadCatch m, MonadIO m) => PerlVar -> PerlT s m a
+readList var = reifyScalarArray var >>= fromSVArray
+
+writeArray :: (ToAV a, MonadCatch m, MonadIO m) => PerlVar -> a -> PerlT s m ()
+writeArray var a = do
+  sv <- reifyScalar var
+  ty <- svType sv
+  case () of
+    _ | ty < const_SVt_PVAV -> toAV a >>= newRef >>= setSV sv
+    _ | ty == const_SVt_PVAV -> setAV (castPtr sv) a
+    _ -> die "not array or array reference"
+
+(@=) :: (ToAV a, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> a -> PerlT s m PerlVar
+capAV @= a = capAV >>= flip writeArray a >> capAV
+
+writeHash :: (ToHV a, MonadCatch m, MonadIO m) => PerlVar -> a -> PerlT s m ()
+writeHash var a = do
+  sv <- reifyScalar var
+  ty <- svType sv
+  case () of
+    _ | ty < const_SVt_PVAV -> toHV a >>= newRef >>= setSV sv
+    _ | ty == const_SVt_PVHV -> setHV (castPtr sv) a
+    _ -> die "not hash or hash reference"
+
+(%=) :: (ToHV a, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> a -> PerlT s m PerlVar
+capHV %= a = capHV >>= flip writeHash a >> capHV
+
+appendHash :: (ToHV a, MonadCatch m, MonadIO m) => PerlVar -> a -> PerlT s m ()
+appendHash var a = do
+  sv <- reifyScalar var
+  ty <- svType sv
+  case () of
+    _ | ty < const_SVt_PVAV -> asRef sv >>= Ref.deRef >>= flip appendHV a
+    _ | ty == const_SVt_PVHV -> appendHV (castPtr sv) a
+    _ -> die "not hash or hash reference"
+
+(%+=) :: (ToHV a, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> a -> PerlT s m PerlVar
+capHV %+= a = capHV >>= flip appendHash a >> capHV

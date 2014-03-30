@@ -85,3 +85,17 @@ executable test-monad
                      , array ==0.4.*
                      , exceptions ==0.3.*
   extra-libraries:     perl
+
+executable test-accessor
+  main-is:             TestAccessor.hs
+  hs-source-dirs:      test
+                     , src
+  cc-options:          -DTRACK_PERL_GLUE
+  c-sources:           c-src/perl-glue.c
+                     , c-src/mini-padwalker.c
+  --ghc-options:         -prof -fprof-auto
+  build-depends:       base ==4.6.*
+                     , transformers ==0.3.*
+                     , array ==0.4.*
+                     , exceptions ==0.3.*
+  extra-libraries:     perl

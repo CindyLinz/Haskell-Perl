@@ -9,6 +9,7 @@ module Perl.SV
   , isAV
   , isHV
   , isCV
+  , svType
   ) where
 
 import Control.Applicative
