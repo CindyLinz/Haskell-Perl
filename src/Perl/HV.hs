@@ -24,6 +24,7 @@ import Foreign.C.String
 
 import Perl.Type
 import Perl.Monad
+import Perl.Class
 import qualified Perl.Internal.MonadGlue as G
 import Perl.SV
 
@@ -72,3 +73,14 @@ deleteHV_ hv key = withHashKey key $ \k -> do
 
 fetchHV :: (HashKey k, MonadIO m) => HV -> k -> PerlT s m (Maybe SV)
 fetchHV hv key = withHashKey key $ \k -> G.fetchHV hv k
+
+instance (HashKey k, ToSV a) => ToHV [(k, a)] where
+  toHV a = do
+    hv <- G.newHVEmpty
+    appendHV hv a
+    return hv
+  setHV hv a = do
+    G.clearHV hv
+    appendHV hv a
+  appendHV hv = mapM_ $ \(key, value) -> do
+    writeHV hv key value

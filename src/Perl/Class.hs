@@ -53,3 +53,8 @@ class ToSVList a where
 
 class FromSVList a where
   fromSVList :: (MonadCatch m, MonadIO m) => [SV] -> PerlT s m a
+
+class ToHV a where
+  toHV :: (MonadCatch m, MonadIO m) => a -> PerlT s m HV
+  setHV :: (MonadCatch m, MonadIO m) => HV -> a -> PerlT s m ()
+  appendHV :: (MonadCatch m, MonadIO m) => HV -> a -> PerlT s m ()
