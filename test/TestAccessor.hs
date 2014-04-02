@@ -34,6 +34,11 @@ main = runPerlT $ do
 
     cap "%a" %- "d" .&&- "data" -$ "0" >>= readScalar >>= liftIO . putStrLn
 
+    cap "@a" >>= readArray >>= \arr -> liftIO $ putStrLn $ "show @a = " ++ show (arr :: [String])
+    cap "%a" >>= readArray >>= \arr -> liftIO $ putStrLn $ "show %a = " ++ show (arr :: [String])
+    cap "$a" >>= readArray >>= \arr -> liftIO $ putStrLn $ "show $a = " ++ show (arr :: [String])
+    cap "$a" & deRef >>= readArray >>= \arr -> liftIO $ putStrLn $ "show %$a = " ++ show (arr :: [String])
+
     retSub ()
 
   eval

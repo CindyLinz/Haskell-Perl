@@ -171,7 +171,7 @@ instance FromSVArray RefSV where fromSVArray = fromSVFromSVArray
 instance FromSVArray RefAV where fromSVArray = fromSVFromSVArray
 instance FromSVArray RefHV where fromSVArray = fromSVFromSVArray
 instance FromSVArray RefCV where fromSVArray = fromSVFromSVArray
-instance FromSVArray SVArray where fromSVArray = duplicateSVArray asSV
+instance FromSVArray SVArray where fromSVArray = duplicateSVArray fromSV
 
 instance FromSV a => FromSVArray [a] where
   fromSVArray = mapM fromSV . elems

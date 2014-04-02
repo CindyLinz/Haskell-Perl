@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, Rank2Types #-}
 module Perl.AV
   ( ToAV (toAV, setAV)
   , FromAV (fromAV)
@@ -110,3 +110,15 @@ shiftAV :: (FromSV a, MonadCatch m, MonadIO m) => AV -> PerlT s m a
 shiftAV av = do
   sv <- G.shiftAV av
   fromSV sv
+
+avToSVArray :: (MonadCatch m, MonadIO m) => (forall a. ToSV a => a -> PerlT s m SV) -> AV -> PerlT s m SVArray
+avToSVArray to av = do
+  len <- G.lengthAV av
+  as <- forM [0..len-1] $ \i -> do
+    G.fetchAV av (fromIntegral i) >>= maybe (to ()) to
+  return $ listArray (1, fromIntegral len) as
+
+instance ToSVArray AV where
+  toSVArray = avToSVArray toSV
+  toSVMortalArray = avToSVArray toSVMortal
+  asSVArray = avToSVArray asSV

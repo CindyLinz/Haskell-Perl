@@ -1,6 +1,10 @@
 {-# LANGUAGE MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances, FunctionalDependencies #-}
 module Perl.Ref
-  where
+  ( Refable (..)
+  , AsRef (..)
+  -- from Perl.Internal.MonadGlue
+  , rvType
+  ) where
 
 import Control.Monad.Catch
 import Control.Monad.IO.Class
@@ -61,7 +65,7 @@ safeTestRV typeName pred sv = do
     else fail $ "cast " ++ typeName ++ " failed (svTYPE=" ++ show t ++ ")" 
 
 instance AsRef RefSV where
-  safeAsRef = safeTestRV "scalar ref" (< const_SVt_PVAV)
+  safeAsRef = safeTestRV "scalar ref" (const True)
   asRef = asRefCommon
 
 instance AsRef RefAV where

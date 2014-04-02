@@ -210,6 +210,9 @@ foreign import ccall safe
 foreign import ccall unsafe
   perl_get_hvn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO HV
 
+foreign import ccall safe
+  glue_list_hv :: PtrPerl -> HV -> Ptr (Ptr SV) -> IO CInt
+
 ------
 -- eval
 

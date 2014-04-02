@@ -207,6 +207,19 @@ HV* perl_get_hvn_flags(pTHX_ const char *name, STRLEN namelen, I32 flags)
     return NULL;
 }
 
+I32 glue_list_hv(pTHX_ HV* hv, /* out */SV ***outv){
+    SV *val;
+    char *key;
+    I32 retlen;
+    I32 size = hv_iterinit(hv);
+    SV ** p = *outv = malloc(sizeof(SV*) * size * 2);
+    while( val = hv_iternextsv(hv, &key, &retlen) ){
+        *p++ = newSVpvn_flags(key, (STRLEN)retlen, 0);
+        *p++ = newSVsv(val);
+    }
+    return size * 2;
+}
+
 /* eval or call */
 
 void handle_returns(pTHX_ I32 count, /* out */SV ***outv){
@@ -218,10 +231,11 @@ void handle_returns(pTHX_ I32 count, /* out */SV ***outv){
 #ifdef TRACK_PERL_GLUE
         double n;
 #endif
-        rets[i] = POPs;
+        rets[i] = newSVsv(POPs);
 #ifdef TRACK_PERL_GLUE
+        printf("prepare return %d REFCNT=%d mortal=%d", i, SvREFCNT(rets[i]), SvIMMORTAL(rets[i]));
         n = SvNVx(rets[i]);
-        printf("prepare return %d NV=%f\n", i, n);
+        printf(" NV=%f\n", n);
 #endif
     } }
     PUTBACK;

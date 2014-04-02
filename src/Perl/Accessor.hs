@@ -45,7 +45,7 @@ data PerlVar
   | PerlVarArrayElement AV Int
   | PerlVarHashElement HV String
 
-infixl 1 @-, %-, &-, .&-, .&&-, -$, &, $=, @=, %=, %+=
+infixl 2 @-, %-, &-, .&-, .&&-, -$, &, $=, @=, %=, %+=
 
 (&) :: a -> (a -> b) -> b
 a & f = f a
@@ -54,18 +54,17 @@ a & f = f a
 f -$ a = f a
 
 cap :: (MonadCatch m, MonadIO m) => String -> PerlT s m PerlVar
-cap code = do
-  ref <- Call.eval ('\\' : code)
-  Ref.deRef (ref :: RefSV) >>= return . PerlVarSV
+cap code =
+  Call.eval ('\\' : code) >>= Ref.deRef >>= return . PerlVarSV
 
 caps :: (MonadCatch m, MonadIO m) => String -> PerlT s m [PerlVar]
-caps code = do
+caps code =
   Call.eval ('\\' : code) >>= mapM (\ref -> Ref.deRef (ref :: RefSV) >>= return . PerlVarSV)
 
 reifyScalar :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SV
 reifyScalar v = case v of
   PerlVarSV sv -> return sv
-  PerlVarSVArray svs -> fromSVArray svs
+  PerlVarSVArray svs -> fromSVArray svs >>= \sv -> liftIO (putStrLn $ show sv) >> return sv
   PerlVarArrayElement av i -> do
     maybeSV <- fetchAV av (fromIntegral i)
     case maybeSV of
@@ -81,9 +80,20 @@ writableScalar :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SV
 writableScalar v = reifyScalar v
 
 reifyScalarArray :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SVArray
-reifyScalarArray v = case v of
-  PerlVarSVArray svs -> return svs
-  _ -> reifyScalar v >>= return . listArray (1,1) . pure
+reifyScalarArray v =
+  let
+    tryExtractAV svs = if rangeSize (bounds svs) == 1
+      then do
+        let sv = svs ! 1
+        ty <- svType sv
+        case () of
+          _ | ty == const_SVt_PVAV -> toSVArray (castPtr sv :: AV)
+          _ | ty == const_SVt_PVHV -> toSVArray (castPtr sv :: HV)
+          _ -> return svs
+      else return svs
+  in case v of
+    PerlVarSVArray svs -> tryExtractAV svs
+    _ -> reifyScalar v >>= tryExtractAV . listArray (1,1) . pure
 
 accessArray :: (MonadCatch m, MonadIO m) => PerlVar -> Int -> PerlT s m PerlVar -- array(or arrayref) access
 accessArray v i = do
@@ -114,8 +124,7 @@ accessMethod v method = do
 accessMethodArgs :: (ToSVList args, MonadCatch m, MonadIO m) => PerlVar -> String -> args -> PerlT s m PerlVar -- method call (with args)
 accessMethodArgs v method args = do
   obj <- reifyScalar v
-  ret <- callMethod obj method args
-  return $ PerlVarSVArray ret
+  callMethod obj method args >>= return . PerlVarSVArray
 
 (@-) :: (MonadCatch m, MonadIO m) => PerlT s m PerlVar -> Int -> PerlT s m PerlVar -- array(or arrayref) access
 capVar @- i = capVar >>= flip accessArray i
@@ -159,8 +168,8 @@ writeScalar var a = reifyScalar var >>= flip setSV a
 ($=) :: (ToSV a, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> a -> PerlT s m PerlVar
 capVar $= a = capVar >>= reifyScalar >>= flip setSV a >> capVar
 
-readList :: (FromSVArray a, MonadCatch m, MonadIO m) => PerlVar -> PerlT s m a
-readList var = reifyScalarArray var >>= fromSVArray
+readArray :: (FromSVArray a, MonadCatch m, MonadIO m) => PerlVar -> PerlT s m a
+readArray var = reifyScalarArray var >>= fromSVArray
 
 writeArray :: (ToAV a, MonadCatch m, MonadIO m) => PerlVar -> a -> PerlT s m ()
 writeArray var a = do

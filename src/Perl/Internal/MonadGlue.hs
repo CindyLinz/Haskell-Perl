@@ -295,9 +295,23 @@ getHV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m HV
 getHV (name, namelen) flag = PerlT $ \perl _ ->
   liftIO (perl_get_hvn_flags perl name (fromIntegral namelen) flag) >>= return . pure
 
+-- each element of the returned SVArray has ref count = 1 and mortal = 0
+listHV :: (MonadCatch m, MonadIO m) => HV -> PerlT s m SVArray
+listHV hv = PerlT $ \perl cv ->
+  liftIO $ alloca $ \ptrPtrOut -> do
+    len <- glue_list_hv perl hv ptrPtrOut
+    if len == 0
+      then
+        return $ pure $ array (1, 0) []
+      else do
+        fptrOut <- peek ptrPtrOut >>= newForeignPtr p_free
+        outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral len) >>= unsafeFreeze
+        return (elems outArray, outArray)
+
 ------
 -- eval
 
+-- each element of the returned SVArray has ref count = 1 and mortal = 0
 eval :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m SVArray
 eval (code, codeLen) flags = PerlT $ \perl _ -> liftIO $ alloca $ \ptrPtrOut -> do
   outn <- glue_eval_pv perl code (fromIntegral codeLen) flags ptrPtrOut
@@ -307,7 +321,7 @@ eval (code, codeLen) flags = PerlT $ \perl _ -> liftIO $ alloca $ \ptrPtrOut -> 
     else do
       fptrOut <- peek ptrPtrOut >>= newForeignPtr p_free
       outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn) >>= unsafeFreeze
-      return $ pure outArray
+      return (elems outArray, outArray)
 
 getEvalError :: (MonadCatch m, MonadIO m) => PerlT s m (Maybe SV)
 getEvalError = PerlT $ \perl _ -> do
@@ -319,6 +333,7 @@ getEvalError = PerlT $ \perl _ -> do
 ------
 -- call
 
+-- each element of the returned SVArray has ref count = 1 and mortal = 0
 callCommon
   :: (MonadCatch m, MonadIO m)
   => (PtrPerl -> CInt -> CInt -> Ptr SV -> Ptr (Ptr SV) -> IO CInt)
@@ -334,15 +349,18 @@ callCommon act flag args = PerlT $ \perl _ ->
         else do
           fptrOut <- peek ptrPtrOut >>= newForeignPtr p_free
           outArray <- unsafeForeignPtrToStorableArray fptrOut (1, fromIntegral outn) >>= unsafeFreeze
-          return $ pure outArray
+          return (elems outArray, outArray)
     )
 
+-- each element of the returned SVArray has ref count = 1 and mortal = 0
 callName :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
 callName (name, nameLen) = callCommon $ \perl -> glue_call_pv perl name (fromIntegral nameLen)
 
+-- each element of the returned SVArray has ref count = 1 and mortal = 0
 callVar :: (MonadCatch m, MonadIO m) => RefCV -> CInt -> SVArray -> PerlT s m SVArray
 callVar sv = callCommon $ \perl -> glue_call_sv perl sv
 
+-- each element of the returned SVArray has ref count = 1 and mortal = 0
 callNameMethod :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> SVArray -> PerlT s m SVArray
 callNameMethod (name, nameLen) = callCommon $ \perl -> glue_call_method_pv perl name (fromIntegral nameLen)
 

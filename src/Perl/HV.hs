@@ -16,6 +16,9 @@ module Perl.HV
   , G.storeHV
   ) where
 
+import Data.Array.IArray
+
+import Control.Monad
 import Control.Monad.Catch
 import Control.Monad.IO.Class
 
@@ -84,3 +87,12 @@ instance (HashKey k, ToSV a) => ToHV [(k, a)] where
     appendHV hv a
   appendHV hv = mapM_ $ \(key, value) -> do
     writeHV hv key value
+
+hvToSVArray :: (MonadCatch m, MonadIO m) => (SV -> PerlT s m SV) -> HV -> PerlT s m SVArray
+hvToSVArray to hv = do
+  arr <- G.listHV hv
+  forM (elems arr) to >>= return . listArray (bounds arr)
+instance ToSVArray HV where
+  toSVArray = hvToSVArray toSV
+  toSVMortalArray = hvToSVArray toSVMortal
+  asSVArray = hvToSVArray asSV
