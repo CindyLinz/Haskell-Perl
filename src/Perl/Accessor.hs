@@ -64,7 +64,7 @@ caps code =
 reifyScalar :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m SV
 reifyScalar v = case v of
   PerlVarSV sv -> return sv
-  PerlVarSVArray svs -> fromSVArray svs >>= \sv -> liftIO (putStrLn $ show sv) >> return sv
+  PerlVarSVArray svs -> fromSVArray svs
   PerlVarArrayElement av i -> do
     maybeSV <- fetchAV av (fromIntegral i)
     case maybeSV of
