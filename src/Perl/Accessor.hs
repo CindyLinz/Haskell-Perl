@@ -138,8 +138,8 @@ capVar .&- method = capVar >>= flip accessMethod method
 (.&&-) :: (ToSVList args, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> String -> args -> PerlT s m PerlVar -- method call (with args)
 (capVar .&&- method) args = capVar >>= \obj -> accessMethodArgs obj method args
 
-deRef :: (MonadCatch m, MonadIO m) => PerlT s m PerlVar -> PerlT s m PerlVar -- dereference
-deRef capVar = capVar >>= reifyScalar >>= asRef >>= Ref.deRef >>= return . PerlVarSV
+deRef :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m PerlVar -- dereference
+deRef var = reifyScalar var >>= asRef >>= Ref.deRef >>= return . PerlVarSV
 
 eval :: (MonadCatch m, MonadIO m) => String -> PerlT s m PerlVar
 eval code = Call.eval code >>= return . PerlVarSVArray

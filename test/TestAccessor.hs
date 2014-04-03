@@ -37,7 +37,7 @@ main = runPerlT $ do
     cap "@a" >>= readArray >>= \arr -> liftIO $ putStrLn $ "show @a = " ++ show (arr :: [String])
     cap "%a" >>= readArray >>= \arr -> liftIO $ putStrLn $ "show %a = " ++ show (arr :: [String])
     cap "$a" >>= readArray >>= \arr -> liftIO $ putStrLn $ "show $a = " ++ show (arr :: [String])
-    cap "$a" & deRef >>= readArray >>= \arr -> liftIO $ putStrLn $ "show %$a = " ++ show (arr :: [String])
+    cap "$a" >>= deRef >>= readArray >>= \arr -> liftIO $ putStrLn $ "show %$a = " ++ show (arr :: [String])
 
     retSub ()
 
