@@ -14,7 +14,7 @@ main = defaultMainWithHooks simpleUserHooks
       myBuildInfo = emptyBuildInfo
         { ccOptions = perlOptc
         , ldOptions = perlOptl
-        , cSources = ["c-src/perlxsi.c", "c-src/mini-padwalker.c"]
+        , cSources = ["c-src/perlxsi.c"]
         }
     return
       ( Just myBuildInfo

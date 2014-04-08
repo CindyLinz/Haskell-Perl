@@ -19,7 +19,6 @@ import Perl.Class
 import Perl.SV
 import Perl.AV
 import Perl.HV
-import Perl.Embed
 import Perl.Ref hiding (deRef)
 import qualified Perl.Ref as Ref
 import Perl.Sub

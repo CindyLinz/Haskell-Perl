@@ -416,19 +416,3 @@ getSubContext = PerlT $ \perl cv ->
 getCV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m CV
 getCV (name, namelen) flag = PerlT $ \perl _ ->
   liftIO (perl_get_cvn_flags perl name (fromIntegral namelen) flag) >>= return . pure
-
-------
--- embed
-
--- | find \'my\' or \'our\' scalars
-findSV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m SV
-findSV (name, namelen) = PerlT $ \perl _ ->
-  liftIO (perl_pad_peek_pvn perl name (fromIntegral namelen)) >>= return . pure
-
--- | find \'my\' or \'our\' arrays
-findAV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m AV
-findAV name = findSV name >>= return . castPtr
-
--- | find \'my\' or \'our\' hashs
-findHV :: (MonadCatch m, MonadIO m) => CStringLen -> PerlT s m HV
-findHV name = findSV name >>= return . castPtr

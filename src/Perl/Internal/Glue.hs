@@ -263,9 +263,3 @@ foreign import ccall unsafe
 
 foreign import ccall unsafe
   "Perl_get_cvn_flags" perl_get_cvn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO CV
-
-------
--- embed
-
-foreign import ccall unsafe
-  perl_pad_peek_pvn :: PtrPerl -> CString -> StrLen -> IO SV

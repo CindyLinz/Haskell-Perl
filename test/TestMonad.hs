@@ -18,7 +18,6 @@ import Perl.Ref
 import Perl.SV
 import Perl.AV
 import Perl.HV
-import Perl.Embed
 import Perl.SVArray
 --import Perl.Accessor
 
@@ -135,32 +134,6 @@ main = runPerlT $ do
   () <- eval "{ my $ascii = defAscii(); local $Data::Dumper::Indent = 0; print Dumper($ascii),$/; invAscii($ascii, 'A', 'C', 'G'); print Dumper($ascii),$/; deleteHash($ascii, 'B', 'D', 'E'); print Dumper($ascii),$/; clearHash($ascii); print Dumper($ascii),$/; }"
   () <- eval "{ echo 'CindyLinz is pretty' }"
 
-  defSub "incA" $ do
-    context <- getSubContext
-    liftIO $ putStrLn $ "incA context=" ++ show context
-    a <- readFindSV "$a"
-    liftIO $ putStrLn $ "$a = " ++ show (a :: String)
-    writeFindSV "$a"  (a ++ a)
-
-    svB <- findSV "$b"
-    b <- fromSV svB
-    liftIO $ putStrLn $ "$b = " ++ show (b :: Int)
-    setSV svB (b+1)
-    retSub ()
-  voidEval "sub f { my $a = 'oo'; my $b = 2; incA(); print ' then = ',$a,', ',$b,$/ }; f()";
-
-  (defSub "anotherAdd" :: ToSVArray ret => Perl s ret -> Perl s ()) $ do
-    context <- getSubContext
-    liftIO $ putStrLn $ "anotherAdd context=" ++ show context
-    args <- findAV "@_"
-    liftIO $ putStrLn $ show args
-    a <- readAV args 0
-    b <- readAV args 1
-    return (a + b :: Int)
-
-  intListRes <- eval "sub add { anotherAdd() }; print '1 + 2 = ', add(1, 2), $/; (3, 5)"
-  liftIO $ putStrLn $ show (intListRes :: [Int])
-
   () <- catch (eval "die 'fail'") (\errMsg -> liftIO $ putStrLn $ "dead: " ++ show (errMsg :: SomeException))
 
   defSub "willDie" $ do
@@ -169,12 +142,6 @@ main = runPerlT $ do
     liftIO $ putStrLn $ "end willDie"
     retSub ()
   voidEval "eval { willDie() }; print '$@=', $@, $/"
-
-  defSub "setAV" $ do
-    av <- findAV "@a"
-    setAV av [7,8 :: Int]
-    retSub ()
-  voidEval "my @a = (2,3,4); setAV(); local $Data::Dumper::Indent = 0; print Dumper(\\@a),$/"
 
 --  defSub "accessor" $ do
 --    v <- readScalar $ cap "%a" ~% "b" ~@ 1

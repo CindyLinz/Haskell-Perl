@@ -30,14 +30,12 @@ library
                      , Perl.HV
                      , Perl.AV
                      , Perl.Ref
-                     , Perl.Embed
                      , Perl.Internal.Glue
                      , Perl.Internal.MonadGlue
                      , Perl.Accessor
                      --, Perl.Lens
   hs-source-dirs:      src
   c-sources:           c-src/perl-glue.c
-                     , c-src/mini-padwalker.c
   -- other-modules:       
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
@@ -52,7 +50,6 @@ executable test-bare
                      , src
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
-                     , c-src/mini-padwalker.c
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
@@ -65,7 +62,6 @@ executable test-monad-glue
                      , src
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
-                     , c-src/mini-padwalker.c
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
                      , array ==0.4.*
@@ -78,7 +74,6 @@ executable test-monad
                      , src
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
-                     , c-src/mini-padwalker.c
   --ghc-options:         -prof -fprof-auto
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
@@ -92,7 +87,6 @@ executable test-accessor
                      , src
   cc-options:          -DTRACK_PERL_GLUE
   c-sources:           c-src/perl-glue.c
-                     , c-src/mini-padwalker.c
   --ghc-options:         -prof -fprof-auto
   build-depends:       base ==4.6.*
                      , transformers ==0.3.*
