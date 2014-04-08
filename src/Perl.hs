@@ -1,15 +1,18 @@
 {-# LANGUAGE ForeignFunctionInterface, EmptyDataDecls #-}
 module Perl
-  where
+  ( module Perl.Type
+  , module Perl.Monad
+  , module Perl.Accessor
+  , module Perl.Sub
+  , module Perl.SV
+  , module Perl.HV
+  , module Perl.AV
+  ) where
 
 import Perl.Type
-import Perl.Constant
 import Perl.Monad
+import Perl.Accessor
 import Perl.Sub
-import Perl.Call
-import Perl.Eval
 import Perl.SV
 import Perl.HV
 import Perl.AV
-import Perl.Ref
-import Perl.Embed
