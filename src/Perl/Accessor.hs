@@ -161,8 +161,26 @@ capSub &- args = capSub >>= flip callSubArgs args
 readScalar :: (FromSV a, MonadCatch m, MonadIO m) => PerlVar -> PerlT s m a
 readScalar var = reifyScalar var >>= fromSV
 
+readInt :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m Int
+readInt = readScalar
+
+readDouble :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m Double
+readDouble = readScalar
+
+readStr :: (MonadCatch m, MonadIO m) => PerlVar -> PerlT s m String
+readStr = readScalar
+
 writeScalar :: (ToSV a, MonadCatch m, MonadIO m)  => PerlVar -> a -> PerlT s m ()
 writeScalar var a = reifyScalar var >>= flip setSV a
+
+writeInt :: (MonadCatch m, MonadIO m)  => PerlVar -> Int -> PerlT s m ()
+writeInt = writeScalar
+
+writeDouble :: (MonadCatch m, MonadIO m)  => PerlVar -> Double -> PerlT s m ()
+writeDouble = writeScalar
+
+writeStr :: (MonadCatch m, MonadIO m)  => PerlVar -> String -> PerlT s m ()
+writeStr = writeScalar
 
 ($=) :: (ToSV a, MonadCatch m, MonadIO m) => PerlT s m PerlVar -> a -> PerlT s m PerlVar
 capVar $= a = capVar >>= reifyScalar >>= flip setSV a >> capVar
