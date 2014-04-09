@@ -298,3 +298,97 @@ instance FromSVList [SV] where fromSVList = mapM fromSV
 instance FromSVList [Int] where fromSVList = mapM fromSV
 instance FromSVList [Double] where fromSVList = mapM fromSV
 instance FromSVList [String] where fromSVList = mapM fromSV
+
+instance (FromSV a1, FromSV a2) => FromSVList (a1, a2) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    a2' <- fromSVNon
+    return (a1', a2')
+  fromSVList [a1] = do
+    a1' <- fromSV a1
+    a2' <- fromSVNon
+    return (a1', a2')
+  fromSVList (a1:a2:_) = do
+    a1' <- fromSV a1
+    a2' <- fromSV a2
+    return (a1', a2')
+
+instance (FromSV a1, FromSV a2, FromSV a3) => FromSVList (a1, a2, a3) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3') <- fromSVList []
+    return (a1', a2', a3')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3') <- fromSVList as
+    return (a1', a2', a3')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4) => FromSVList (a1, a2, a3, a4) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4') <- fromSVList []
+    return (a1', a2', a3', a4')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4') <- fromSVList as
+    return (a1', a2', a3', a4')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5) => FromSVList (a1, a2, a3, a4, a5) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4', a5') <- fromSVList []
+    return (a1', a2', a3', a4', a5')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4', a5') <- fromSVList as
+    return (a1', a2', a3', a4', a5')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6) => FromSVList (a1, a2, a3, a4, a5, a6) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4', a5', a6') <- fromSVList []
+    return (a1', a2', a3', a4', a5', a6')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4', a5', a6') <- fromSVList as
+    return (a1', a2', a3', a4', a5', a6')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7) => FromSVList (a1, a2, a3, a4, a5, a6, a7) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4', a5', a6', a7') <- fromSVList []
+    return (a1', a2', a3', a4', a5', a6', a7')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4', a5', a6', a7') <- fromSVList as
+    return (a1', a2', a3', a4', a5', a6', a7')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7, FromSV a8) => FromSVList (a1, a2, a3, a4, a5, a6, a7, a8) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4', a5', a6', a7', a8') <- fromSVList []
+    return (a1', a2', a3', a4', a5', a6', a7', a8')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4', a5', a6', a7', a8') <- fromSVList as
+    return (a1', a2', a3', a4', a5', a6', a7', a8')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7, FromSV a8, FromSV a9) => FromSVList (a1, a2, a3, a4, a5, a6, a7, a8, a9) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4', a5', a6', a7', a8', a9') <- fromSVList []
+    return (a1', a2', a3', a4', a5', a6', a7', a8', a9')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4', a5', a6', a7', a8', a9') <- fromSVList as
+    return (a1', a2', a3', a4', a5', a6', a7', a8', a9')
+
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7, FromSV a8, FromSV a9, FromSV a10) => FromSVList (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) where
+  fromSVList [] = do
+    a1' <- fromSVNon
+    (a2', a3', a4', a5', a6', a7', a8', a9', a10') <- fromSVList []
+    return (a1', a2', a3', a4', a5', a6', a7', a8', a9', a10')
+  fromSVList (a:as) = do
+    a1' <- fromSV a
+    (a2', a3', a4', a5', a6', a7', a8', a9', a10') <- fromSVList as
+    return (a1', a2', a3', a4', a5', a6', a7', a8', a9', a10')

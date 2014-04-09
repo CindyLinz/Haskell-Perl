@@ -24,6 +24,7 @@ import Perl.Type
 import Perl.Class
 import Perl.Monad
 import Perl.SV
+import Perl.SVList
 
 newtype SVArrayBuilder = SVArrayBuilder { unSVArrayBuilder :: [ToSVObj] -> [ToSVObj] }
 newtype SVArrayBreaker s m = SVArrayBreaker { unSVArrayBreaker :: [[SV] -> PerlT s m [SV]] -> [[SV] -> PerlT s m [SV]] }
@@ -175,3 +176,13 @@ instance FromSVArray SVArray where fromSVArray = duplicateSVArray fromSV
 
 instance FromSV a => FromSVArray [a] where
   fromSVArray = mapM fromSV . elems
+
+instance (FromSV a1, FromSV a2) => FromSVArray (a1, a2) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3) => FromSVArray (a1, a2, a3) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4) => FromSVArray (a1, a2, a3, a4) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5) => FromSVArray (a1, a2, a3, a4, a5) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6) => FromSVArray (a1, a2, a3, a4, a5, a6) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7) => FromSVArray (a1, a2, a3, a4, a5, a6, a7) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7, FromSV a8) => FromSVArray (a1, a2, a3, a4, a5, a6, a7, a8) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7, FromSV a8, FromSV a9) => FromSVArray (a1, a2, a3, a4, a5, a6, a7, a8, a9) where fromSVArray = fromSVList . elems
+instance (FromSV a1, FromSV a2, FromSV a3, FromSV a4, FromSV a5, FromSV a6, FromSV a7, FromSV a8, FromSV a9, FromSV a10) => FromSVArray (a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) where fromSVArray = fromSVList . elems
