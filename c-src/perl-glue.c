@@ -392,3 +392,15 @@ void set_sub_returns(pTHX_ SV** ret_buffer, I32 items){
 I32 get_sub_context(pTHX){
     return GIMME_V;
 }
+
+/* warnings */
+
+STRLEN* glue_suppress_warnings(pTHX){
+    STRLEN *origin = PL_curcop->cop_warnings;
+    PL_curcop->cop_warnings = pWARN_NONE;
+    return origin;
+}
+
+void glue_restore_warnings(pTHX_ STRLEN *origin){
+    PL_curcop->cop_warnings = origin;
+}

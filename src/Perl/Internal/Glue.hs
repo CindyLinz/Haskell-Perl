@@ -263,3 +263,12 @@ foreign import ccall unsafe
 
 foreign import ccall unsafe
   "Perl_get_cvn_flags" perl_get_cvn_flags :: PtrPerl -> CString -> StrLen -> CInt -> IO CV
+
+------
+-- warnings
+
+foreign import ccall unsafe
+  glue_suppress_warnings :: PtrPerl -> IO (Ptr StrLen)
+
+foreign import ccall unsafe
+  glue_restore_warnings :: PtrPerl -> Ptr StrLen -> IO ()

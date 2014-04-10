@@ -416,3 +416,14 @@ getSubContext = PerlT $ \perl cv ->
 getCV :: (MonadCatch m, MonadIO m) => CStringLen -> CInt -> PerlT s m CV
 getCV (name, namelen) flag = PerlT $ \perl _ ->
   liftIO (perl_get_cvn_flags perl name (fromIntegral namelen) flag) >>= return . pure
+
+------
+-- warnings
+
+suppressWarnings :: (MonadCatch m, MonadIO m) => PerlT s m (Ptr StrLen)
+suppressWarnings = PerlT $ \perl _ ->
+  liftIO (glue_suppress_warnings perl) >>= return . pure
+
+restoreWarnings :: (MonadCatch m, MonadIO m) => Ptr StrLen -> PerlT s m ()
+restoreWarnings origin = PerlT $ \perl _ ->
+  liftIO (glue_restore_warnings perl origin) >>= return . pure
