@@ -1,4 +1,4 @@
-{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RankNTypes, ViewPatterns #-}
 module Perl.Internal.MonadGlue
   where
 
@@ -368,13 +368,17 @@ callNameMethod (name, nameLen) = callCommon $ \perl -> glue_call_method_pv perl 
 -- sub
 
 finalSub :: ToSVArray ret => (forall s1. Perl s1 ret) -> PtrPerl -> CV -> IO SV
-finalSub body perl cv = catchJust fromException
+finalSub body perl cv = catches
   ( do
     (svPool, ()) <- unPerlT (body >>= toSVMortalArray >>= setSubReturns) perl cv
     releaseSVPool perl svPool
     return nullPtr
   )
-  (\(PerlException _ sv) -> return sv)
+  [ Handler $ \(PerlException _ sv) -> return sv
+  , Handler $ \(SomeException e) ->
+    withCStringLen (show e) $ \(cstr, len) ->
+      unPerlT (newStrSVMortal cstr (fromIntegral len)) perl cv >>= return . snd
+  ]
 
 wrapSub :: (MonadCatch m, MonadIO m) => (PtrPerl -> CV -> IO SV) -> PerlT s m RefCV
 wrapSub fun = PerlT $ \perl _ -> liftIO $ do
