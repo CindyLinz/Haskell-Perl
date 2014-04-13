@@ -16,12 +16,11 @@ static int my_argc = 3;
 static char *my_argv[] = { "", "-e",
     PERL_BUILDIN_SUB_WRAPPER
 , NULL };
-static char *my_env[] = { NULL };
 
 static int running_perl = 0;
 
 static void very_init_perl(){
-    PERL_SYS_INIT3(&my_argc, (char ***)&my_argv, (char ***)&my_env);
+    PERL_SYS_INIT(&my_argc, (char ***)&my_argv);
 }
 
 static void very_exit_perl(){
@@ -35,7 +34,7 @@ tTHX init_perl(){
 
     aTHX = perl_alloc();
     perl_construct(aTHX);
-    perl_parse(aTHX_ xs_init, my_argc, my_argv, my_env);
+    perl_parse(aTHX_ xs_init, my_argc, my_argv, NULL);
 #ifdef TRACK_PERL_GLUE
     printf("init_perl() %p", (void*)aTHX);
     puts(PL_bincompat_options);
